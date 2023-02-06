@@ -1,0 +1,78 @@
+version: '3.7'
+
+services:
+  vault:
+      image: vault:latest
+      container_name: aquafarm_vault_local
+      volumes:
+        - ./volumes/vault-file:/vault/file
+      ports:
+        - "8200:8200/tcp"
+      environment:
+        VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN}
+        VAULT_DEV_LISTEN_ADDRESS: '0.0.0.0:8200'
+        VAULT_ADDR: 'http://0.0.0.0:8200'
+      cap_add:
+        - IPC_LOCK
+      entrypoint: "vault server -dev"
+  redis:
+      image: redis:6.2-alpine
+      container_name: aquafarm_redis_local
+      restart: always
+      ports:
+        - '6379:6379'
+      command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_TOKEN}
+      volumes:
+        - ./volumes/redis-data:/var/lib/redis
+        - ./volumes/redis.conf:/usr/local/etc/redis/redis.conf
+      environment:
+        - REDIS_REPLICATION_MODE=master
+  postgres:
+    image: postgres
+    container_name: aquafarm_postgres_local
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=project_db
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - '5492:5432'
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data
+      - ./schema/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.0
+    container_name: aquafarm_elastic_local
+    environment:
+      - xpack.security.enabled=false
+      - "discovery.type=single-node"
+    ports:
+      - 9200:9200
+    volumes:
+      - ./schema/elasticsearch:/schema
+  # app:
+  #   build: .
+  #   environment:
+  #     VAULT_TOKEN: ${VAULT_TOKEN}
+    # depends_on:
+    #   - vault_dev
+    #   - postgres
+    #   - elastic
+    #   - redis
+  # apps:
+  #   image: golang:latest
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - vault_dev
+  #     - postgres
+  #     - elastic
+  #     - 
+  #   volumes:
+  #     - .:/go/src/app
+  #   working_dir: /go/src/app
+  #   command: go run main.go

@@ -1,0 +1,6 @@
+{
+    "data" : {
+        "postgres_domain" : "domain",
+        "postgres_password" : "password"
+    }
+}

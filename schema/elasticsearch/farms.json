@@ -1,0 +1,24 @@
+{
+    "settings": {
+        "number_of_shards": 1
+    },
+    "mappings": {
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "text"
+        },
+        "address": {
+          "type": "text"
+        },
+        "owner": {
+          "type": "text"
+        },
+        "area": {
+          "type": "float"
+        }
+      }
+    }
+}
