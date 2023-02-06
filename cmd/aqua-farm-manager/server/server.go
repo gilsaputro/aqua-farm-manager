@@ -3,9 +3,11 @@ package server
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"aqua-farm-manager/cmd/aqua-farm-manager/config"
+	"aqua-farm-manager/internal/app/middleware"
 	"aqua-farm-manager/internal/infrastructure/elasticsearch"
 	"aqua-farm-manager/internal/infrastructure/postgres"
 	"aqua-farm-manager/internal/infrastructure/redis"
@@ -112,6 +114,19 @@ func NewServer() {
 		log.Println("Init-ElasticSearch")
 	}
 
+	// Init Handler
+	mdl := middleware.NewMiddleware(s.redis)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello World!"))
+	})
+	http.HandleFunc("/a", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello World A!"))
+	})
+
+	http.HandleFunc("/b", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello World B!"))
+	})
+	http.ListenAndServe(":8080", mdl.Middleware(http.DefaultServeMux))
 }
 
 // Run is func to create server and invoke Start()

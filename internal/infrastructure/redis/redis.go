@@ -12,6 +12,8 @@ type RedisMethod interface {
 	Get(key string) (string, error)
 	Set(key, value string) error
 	Delete(key string) error
+	SETNX(key string) (bool, error)
+	HINCRBY(path, key string) error
 }
 
 // RedisConfig is list config to create redis client
@@ -81,4 +83,30 @@ func (c *Client) Delete(key string) error {
 	}
 
 	return nil
+}
+
+// SETNX set a key from the Redis database and return if the key is new or not
+func (c *Client) SETNX(key string) (bool, error) {
+	conn := c.pool.Get()
+	defer conn.Close()
+
+	isNew, err := redis.Bool(conn.Do("SETNX", key, 1))
+	if err != nil {
+		return false, err
+	}
+
+	return isNew, nil
+}
+
+// HINCRBY increase a key from the Redis database based on key
+func (c *Client) HINCRBY(path, key string) error {
+	conn := c.pool.Get()
+	defer conn.Close()
+
+	_, err := conn.Do("HINCRBY", path, key, 1)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
