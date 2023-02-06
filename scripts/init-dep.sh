@@ -5,10 +5,10 @@ function main() {
   schema_es_dir=$4
 
   echo "INFO: checking redis instance..."
-  test_redis_env "redis" "localhost" "redislocal" 2
+  test_redis_env "aquafarm_redis_local" "localhost" "redislocal" 2
 
   echo "INFO: checking postgres instance.."
-  test_postgres_env "postgres" "postgres_local" 2
+  test_postgres_env "aquafarm_postgres_local" "aquafarm_postgres_local" 2
 
   echo "INFO: checking vault instance..."
   wait_for_http "hashicorp_vault" "localhost:8200/v1/sys/health" 2
@@ -48,7 +48,8 @@ function test_redis_env() {
   sleep_time=$4
 
   while [[ true ]]; do
-    local code=`docker exec redis_local redis-cli -h $addr -a $password ping`
+    local code=`docker exec $name redis-cli -h $addr -a $password ping`
+    echo "docker exec $name redis-cli -h $addr -a $password ping"
     if [ "$code" == "PONG" ]; then
       echo "INFO: $name is ready"
       break
