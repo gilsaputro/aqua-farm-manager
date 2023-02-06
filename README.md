@@ -39,7 +39,6 @@ make deps-tear
 ```
 
 ### Running Binary:
-    a. Build the Binary: Use the "go build" command to build the binary from the source code.
-    b. Run the Binary: Run the binary using the following command in your terminal: "./aquafarm-management".
+To run the AquaFarm management system binary correctly.
 
 Note: The details mentioned in these steps may vary depending on your configuration.
