@@ -1,6 +1,6 @@
 {
     "data" : {
-        "postgres_domain" : "domain",
-        "postgres_password" : "password"
+        "redis_password" : "redislocal",
+        "postgres_config" : "host=localhost port=5492 user=postgres dbname=aquafarm password=postgres sslmode=disable"
     }
 }

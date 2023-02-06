@@ -34,7 +34,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=project_db
+      - POSTGRES_DB=aquafarm
     logging:
       options:
         max-size: 10m
@@ -43,7 +43,6 @@ services:
       - '5492:5432'
     volumes:
       - ./volumes/postgres:/var/lib/postgresql/data
-      - ./schema/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
   elastic:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.12.0
     container_name: aquafarm_elastic_local
@@ -52,27 +51,3 @@ services:
       - "discovery.type=single-node"
     ports:
       - 9200:9200
-    volumes:
-      - ./schema/elasticsearch:/schema
-  # app:
-  #   build: .
-  #   environment:
-  #     VAULT_TOKEN: ${VAULT_TOKEN}
-    # depends_on:
-    #   - vault_dev
-    #   - postgres
-    #   - elastic
-    #   - redis
-  # apps:
-  #   image: golang:latest
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - vault_dev
-  #     - postgres
-  #     - elastic
-  #     - 
-  #   volumes:
-  #     - .:/go/src/app
-  #   working_dir: /go/src/app
-  #   command: go run main.go

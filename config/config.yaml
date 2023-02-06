@@ -1,0 +1,12 @@
+vault:
+  token : "root"
+  vault_host : localhost:8200
+redis :
+  redis_password : <redis_password>
+  redis_host : localhost:6379
+  max_idle_in_sec : 600
+  idle_timeout_in_sec : 1
+postgres :
+  postgres_config : <postgres_config>
+es :
+  host : http://localhost:9200
