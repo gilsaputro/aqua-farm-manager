@@ -221,14 +221,14 @@ func (s *Server) Start() int {
 	signal.Notify(c, os.Interrupt)
 	<-c
 
-	fmt.Println("Received interrupt signal, performing backup...")
+	log.Println("Received interrupt signal, performing backup...")
 	// Backup data from redis to postgres before shytdown
 	s.statDomain.BackUpStat()
 	// Create a context with a timeout to allow the server to cleanly shut down
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	s.httpServer.Shutdown(ctx)
-	fmt.Println("complete, shutting down.")
+	log.Println("complete, shutting down.")
 	return 0
 }
 
