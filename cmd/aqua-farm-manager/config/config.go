@@ -45,7 +45,8 @@ type Redis struct {
 
 // Handler struct to hold the configuration data for handler
 type Handler struct {
-	TimeoutInSec int `yaml:"timeout_in_sec"`
+	TimeoutInSec       int `yaml:"timeout_in_sec"`
+	BackupTimeInMinute int `yaml:"backup_time_in_minute"`
 }
 
 // GetConfig is func to load config and replace it by secret value

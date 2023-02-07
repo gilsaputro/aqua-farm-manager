@@ -1,9 +1,13 @@
 package stat
 
 import (
+	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"sync"
 
+	"aqua-farm-manager/pkg/postgres"
 	"aqua-farm-manager/pkg/redis"
 )
 
@@ -19,17 +23,22 @@ var (
 type StatStore interface {
 	IngestMetrics(urlID, method, ua string) error
 	GetMetrics(urlID, method string) (string, string, error)
+	BackupMetrics(urlID, method string, request, uniqagent int) error
+	MigrateMetrics(url, method, request, uniqagent string) error
+	GetStatData(urlID, method string) (string, string, error)
 }
 
 // Stat is list dependencies stat store
 type Stat struct {
 	redis redis.RedisMethod
+	pg    postgres.PostgresMethod
 }
 
 // NewStatStore is func to generate StatStore interface
-func NewStatStore(redis redis.RedisMethod) StatStore {
+func NewStatStore(redis redis.RedisMethod, pg postgres.PostgresMethod) StatStore {
 	return &Stat{
 		redis: redis,
+		pg:    pg,
 	}
 }
 
@@ -76,6 +85,75 @@ func (s *Stat) GetMetrics(urlID, method string) (string, string, error) {
 
 	cUA := metrics[CountUA]
 	cReq := metrics[CountRequested]
+
+	return cUA, cReq, nil
+}
+
+// BackupMetrics is func to backup metrics from redis to postgres
+func (s *Stat) BackupMetrics(urlID, method string, request, uniqagent int) error {
+	var err error
+	pathKey := generatePathKeyMetrics(urlID, method)
+	stat := postgres.StatMetrics{
+		Key:       pathKey,
+		Request:   request,
+		UniqAgent: uniqagent,
+	}
+
+	val := s.pg.CheckStatExists(stat)
+	if val {
+		err = s.pg.UpdateStat(&stat)
+	} else {
+		err = s.pg.Insert(&stat)
+	}
+
+	return err
+}
+
+// MigrateMetrics is func to migrate metrics from postgres to redis
+func (s *Stat) MigrateMetrics(urlID, method, request, uniqagent string) error {
+	var errUA, errReq error
+	key := generatePathKeyMetrics(urlID, method)
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		errUA = s.redis.HSET(key, CountUA, uniqagent)
+		if errUA != nil {
+			log.Println("MigrateMetrics-Error Ingest Uniq Agent :", errUA)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		errReq = s.redis.HSET(key, CountRequested, request)
+		if errUA != nil {
+			log.Println("MigrateMetrics-Error Ingest Requested :", errReq)
+		}
+	}()
+
+	if errUA != nil || errReq != nil {
+		return fmt.Errorf("got error while migrate")
+	}
+
+	return nil
+}
+
+// GetStatData is func to metrics from postgres
+func (s *Stat) GetStatData(urlID, method string) (string, string, error) {
+	var err error
+	pathKey := generatePathKeyMetrics(urlID, method)
+
+	statMetrics := &postgres.StatMetrics{
+		Key: pathKey,
+	}
+	err = s.pg.GetStatRecodByKey(statMetrics)
+	if err != nil {
+		return "", "", err
+	}
+
+	cUA := strconv.Itoa(statMetrics.UniqAgent)
+	cReq := strconv.Itoa(statMetrics.Request)
 
 	return cUA, cReq, nil
 }

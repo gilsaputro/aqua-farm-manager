@@ -24,8 +24,16 @@ type Ponds struct {
 	Status       int
 }
 
-// AdsKeywordMapping struct to store AdsKeywordMapping information
+// FarmPondsMapping struct to store FarmPondsMapping information
 type FarmPondsMapping struct {
 	FarmID  uint
 	PondsID uint
+}
+
+// StatMetrics struct to store StatMetrics information
+type StatMetrics struct {
+	gorm.Model
+	Key       string
+	Request   int
+	UniqAgent int
 }

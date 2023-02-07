@@ -1,10 +1,13 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"time"
 
 	"aqua-farm-manager/cmd/aqua-farm-manager/config"
 	"aqua-farm-manager/internal/app"
@@ -34,18 +37,19 @@ type Server struct {
 	statInfra   statinfra.StatStore
 	statHandler stat.StatHandler
 	farmHandler farm.FarmHandler
+	httpServer  *http.Server
 }
 
 // NewServer is func to create server with all configuration
-func NewServer() {
-	s := Server{}
+func NewServer() (*Server, error) {
+	s := &Server{}
 
 	// ======== Init Dependencies Related ========
 	// Load Env File
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Printf("Error loading .env file: %v", err)
-		return
+		return s, err
 	}
 
 	// Init Vault
@@ -53,13 +57,13 @@ func NewServer() {
 		token := os.Getenv("VAULT_TOKEN")
 		if len(token) <= 0 {
 			fmt.Print("[Got Error]-Vault Invalid VAULT_TOKEN")
-			return
+			return s, fmt.Errorf("[Got Error]-Vault Invalid VAULT_TOKEN")
 		}
 
 		host := os.Getenv("VAULT_HOST")
 		if len(host) <= 0 {
 			fmt.Print("[Got Error]-Vault Invalid VAULT_HOST")
-			return
+			return s, fmt.Errorf("[Got Error]-Vault Invalid VAULT_HOST")
 		}
 
 		vaultMethod, err := vault.NewVaultClient(token, host)
@@ -128,16 +132,23 @@ func NewServer() {
 
 	// ======== Init Dependencies Infra ========
 	{
-		statinf := statinfra.NewStatStore(s.redis)
+		statinf := statinfra.NewStatStore(s.redis, s.postgres)
 		s.statInfra = statinf
 		log.Println("Init-NewStatStore")
 	}
 
 	// ======== Init Dependencies Domain ========
+	// Init Stat Domain
 	{
 		statDom := statdomain.NewStatDomain(s.statInfra)
 		s.statDomain = statDom
 		log.Println("Init-NewStatDomain")
+	}
+
+	// Init Stat Migrator
+	{
+		s.statDomain.MigrateStat()
+		log.Println("Init-MigrateStatMetrics From Postgres To Redis")
 	}
 
 	// ======== Init Dependencies Handler/App ========
@@ -168,23 +179,65 @@ func NewServer() {
 		s.statHandler = *handler
 	}
 
-	r := mux.NewRouter()
-	// Init Farm Path
-	port := ":8080"
-	farmPath := app.Farms
-	r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.CreateFarmHandler)).Methods("POST")
-	r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.GetFarmHandler)).Methods("GET")
-	r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.UpdateFarmHandler)).Methods("PUT")
-	r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.DeleteFarmHandler)).Methods("DELETE")
+	// Init Stat Backup Cron
+	{
+		s.statHandler.InitMigrate(s.cfg.StatHandler.BackupTimeInMinute)
+		log.Println("Init-Backup Scheduler From Redis To Postgres")
+	}
 
-	statPath := app.Stat
-	r.HandleFunc(statPath.String(), s.statHandler.GetStatHandler).Methods("GET")
+	// Init Router
+	{
+		r := mux.NewRouter()
+		// Init Farm Path
+		farmPath := app.Farms
+		r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.CreateFarmHandler)).Methods("POST")
+		r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.GetFarmHandler)).Methods("GET")
+		r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.UpdateFarmHandler)).Methods("PUT")
+		r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.DeleteFarmHandler)).Methods("DELETE")
 
-	log.Println("Running On", port)
-	http.ListenAndServe(port, r)
+		// Init Stat Path
+		statPath := app.Stat
+		r.HandleFunc(statPath.String(), s.statHandler.GetStatHandler).Methods("GET")
+
+		server := &http.Server{
+			Addr:    ":8080",
+			Handler: r,
+		}
+
+		s.httpServer = server
+	}
+	return s, nil
+}
+
+func (s *Server) Start() int {
+	go func() {
+		if err := s.httpServer.ListenAndServe(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	// Wait for a signal to shut down the application
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+
+	fmt.Println("Received interrupt signal, performing backup...")
+	// Backup data from redis to postgres before shytdown
+	s.statDomain.BackUpStat()
+	// Create a context with a timeout to allow the server to cleanly shut down
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	s.httpServer.Shutdown(ctx)
+	fmt.Println("complete, shutting down.")
+	return 0
 }
 
 // Run is func to create server and invoke Start()
 func Run() int {
-	return 0
+	s, err := NewServer()
+	if err != nil {
+		return 1
+	}
+
+	return s.Start()
 }

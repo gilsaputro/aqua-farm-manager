@@ -5,6 +5,7 @@ import (
 	"aqua-farm-manager/internal/infrastructure/stat"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -13,6 +14,8 @@ import (
 type StatDomain interface {
 	GenerateStatAPI() map[string]StatMetrics
 	IngestStatAPI(path, method, ua string)
+	BackUpStat()
+	MigrateStat()
 }
 
 // Stat is list dependencies stat domain
@@ -40,7 +43,7 @@ func (s *Stat) GenerateStatAPI() map[string]StatMetrics {
 		url := strconv.Itoa(id.Int())
 		listmethod := app.UrlIDMethod[id]
 		for _, method := range listmethod {
-			req, ua, err := s.store.GetMetrics(url, method)
+			ua, req, err := s.store.GetMetrics(url, method)
 			if err != nil {
 				continue
 			}
@@ -71,4 +74,54 @@ func (s *Stat) IngestStatAPI(path, method, ua string) {
 			fmt.Println("[IngestStatAPI]-Got Error:", err)
 		}
 	}
+}
+
+// BackUpStat is func to backup data from redis to postgres
+func (s *Stat) BackUpStat() {
+	for id := app.UrlID(1); id < app.Limit; id++ {
+		url := strconv.Itoa(id.Int())
+		listmethod := app.UrlIDMethod[id]
+		for _, method := range listmethod {
+			ua, req, err := s.store.GetMetrics(url, method)
+			if err != nil {
+				continue
+			}
+
+			count_req, _ := strconv.Atoi(req)
+			count_ua, _ := strconv.Atoi(ua)
+
+			err = s.store.BackupMetrics(url, method, count_req, count_ua)
+			if err != nil {
+				fmt.Println("[BackUpStat]-Got Error:", err)
+				continue
+			}
+		}
+	}
+}
+
+// MigrateStat is func to migrate data from postgres to redis
+func (s *Stat) MigrateStat() {
+	var wg sync.WaitGroup
+	for id := app.UrlID(1); id < app.Limit; id++ {
+		url := strconv.Itoa(id.Int())
+		listmethod := app.UrlIDMethod[id]
+		for _, method := range listmethod {
+			wg.Add(1)
+			go func(url, method string) {
+				defer wg.Done()
+				var req, ua string
+				ua, req, err := s.store.GetStatData(url, method)
+				if err != nil {
+					return
+				}
+
+				err = s.store.MigrateMetrics(url, method, req, ua)
+				if err != nil {
+					fmt.Println("[MigrateStat]-Got Error:", err)
+					return
+				}
+			}(url, method)
+		}
+	}
+	wg.Wait()
 }

@@ -107,3 +107,14 @@ func mapResponse(metrics map[string]stat.StatMetrics) Response {
 	res.Data = mapMetrics
 	return res
 }
+
+// InitMigrate is func to init scheduler to backup data stat from redis to postgres
+func (h *StatHandler) InitMigrate(tickInMinute int) {
+	go func() {
+		tick := time.Tick(time.Duration(tickInMinute) * time.Minute)
+		for range tick {
+			log.Println("Running Backup Stat")
+			h.stat.BackUpStat()
+		}
+	}()
+}

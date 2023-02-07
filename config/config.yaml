@@ -14,3 +14,4 @@ farm_handler :
   timeout_in_sec : 5
 stat_handler :
   timeout_in_sec : 5
+  backup_time_in_minute : 5
