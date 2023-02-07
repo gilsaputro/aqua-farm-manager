@@ -10,3 +10,7 @@ postgres :
   postgres_config : <postgres_config>
 es :
   host : http://localhost:9200
+farm_handler :
+  timeout_in_sec : 5
+stat_handler :
+  timeout_in_sec : 5

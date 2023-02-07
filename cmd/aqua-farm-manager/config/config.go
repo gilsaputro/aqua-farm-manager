@@ -11,10 +11,12 @@ import (
 
 // Config struct to hold the configuration data for server
 type Config struct {
-	Vault    Vault    `yaml:"vault"`
-	Redis    Redis    `yaml:"redis"`
-	Postgres Postgres `yaml:"postgres"`
-	ES       ES       `yaml:"es"`
+	Vault       Vault    `yaml:"vault"`
+	Redis       Redis    `yaml:"redis"`
+	Postgres    Postgres `yaml:"postgres"`
+	ES          ES       `yaml:"es"`
+	FarmHandler Handler  `yaml:"farm_handler"`
+	StatHandler Handler  `yaml:"stat_handler"`
 }
 
 // Vault struct to hold the configuration data for vault
@@ -28,7 +30,7 @@ type Postgres struct {
 	Config string `yaml:"postgres_config"`
 }
 
-// Postgres struct to hold the configuration data for postgres
+// ES struct to hold the configuration data for ES
 type ES struct {
 	Host string `yaml:"host"`
 }
@@ -41,6 +43,12 @@ type Redis struct {
 	IdleTimeoutInSec int64  `yaml:"idle_timeout_in_sec"`
 }
 
+// Handler struct to hold the configuration data for handler
+type Handler struct {
+	TimeoutInSec int `yaml:"timeout_in_sec"`
+}
+
+// GetConfig is func to load config and replace it by secret value
 func GetConfig(values map[string]string) (Config, error) {
 	var cfg Config
 	// Read the YAML file into a byte slice

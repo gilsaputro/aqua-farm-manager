@@ -7,28 +7,40 @@ import (
 	"os"
 
 	"aqua-farm-manager/cmd/aqua-farm-manager/config"
+	"aqua-farm-manager/internal/app"
+	"aqua-farm-manager/internal/app/farm"
 	"aqua-farm-manager/internal/app/middleware"
-	"aqua-farm-manager/internal/infrastructure/elasticsearch"
-	"aqua-farm-manager/internal/infrastructure/postgres"
-	"aqua-farm-manager/internal/infrastructure/redis"
+	"aqua-farm-manager/internal/app/stat"
+	statdomain "aqua-farm-manager/internal/domain/stat"
+	statinfra "aqua-farm-manager/internal/infrastructure/stat"
+	"aqua-farm-manager/pkg/elasticsearch"
+	"aqua-farm-manager/pkg/postgres"
+	"aqua-farm-manager/pkg/redis"
 	"aqua-farm-manager/pkg/vault"
 
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
 
 // Servcer is list configuration to run Server
 type Server struct {
-	cfg      config.Config
-	vault    vault.VaultMethod
-	redis    redis.RedisMethod
-	postgres postgres.PostgresMethod
-	es       elasticsearch.ElasticSearchMethod
+	cfg         config.Config
+	vault       vault.VaultMethod
+	redis       redis.RedisMethod
+	postgres    postgres.PostgresMethod
+	es          elasticsearch.ElasticSearchMethod
+	middleware  middleware.Middleware
+	statDomain  statdomain.StatDomain
+	statInfra   statinfra.StatStore
+	statHandler stat.StatHandler
+	farmHandler farm.FarmHandler
 }
 
 // NewServer is func to create server with all configuration
 func NewServer() {
 	s := Server{}
 
+	// ======== Init Dependencies Related ========
 	// Load Env File
 	err := godotenv.Load()
 	if err != nil {
@@ -114,19 +126,62 @@ func NewServer() {
 		log.Println("Init-ElasticSearch")
 	}
 
-	// Init Handler
-	mdl := middleware.NewMiddleware(s.redis)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World!"))
-	})
-	http.HandleFunc("/a", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World A!"))
-	})
+	// ======== Init Dependencies Infra ========
+	{
+		statinf := statinfra.NewStatStore(s.redis)
+		s.statInfra = statinf
+		log.Println("Init-NewStatStore")
+	}
 
-	http.HandleFunc("/b", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World B!"))
-	})
-	http.ListenAndServe(":8080", mdl.Middleware(http.DefaultServeMux))
+	// ======== Init Dependencies Domain ========
+	{
+		statDom := statdomain.NewStatDomain(s.statInfra)
+		s.statDomain = statDom
+		log.Println("Init-NewStatDomain")
+	}
+
+	// ======== Init Dependencies Handler/App ========
+	// Init Middleware
+	{
+		mdl := middleware.NewMiddleware(s.statDomain)
+		s.middleware = mdl
+		log.Println("Init-NewMiddleware")
+	}
+
+	// Init FarmHandler
+	{
+		var opts []farm.Option
+		opts = append(opts, farm.WithTimeoutOptions(s.cfg.FarmHandler.TimeoutInSec))
+		handler := farm.NewFarmHandler(opts...)
+
+		log.Println("Init-FarmHandler")
+		s.farmHandler = *handler
+	}
+
+	// Init StatHandler
+	{
+		var opts []stat.Option
+		opts = append(opts, stat.WithTimeoutOptions(s.cfg.StatHandler.TimeoutInSec))
+		handler := stat.NewStatHandler(s.statDomain, opts...)
+
+		log.Println("Init-StatHandler")
+		s.statHandler = *handler
+	}
+
+	r := mux.NewRouter()
+	// Init Farm Path
+	port := ":8080"
+	farmPath := app.Farms
+	r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.CreateFarmHandler)).Methods("POST")
+	r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.GetFarmHandler)).Methods("GET")
+	r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.UpdateFarmHandler)).Methods("PUT")
+	r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.DeleteFarmHandler)).Methods("DELETE")
+
+	statPath := app.Stat
+	r.HandleFunc(statPath.String(), s.statHandler.GetStatHandler).Methods("GET")
+
+	log.Println("Running On", port)
+	http.ListenAndServe(port, r)
 }
 
 // Run is func to create server and invoke Start()

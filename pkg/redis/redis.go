@@ -13,7 +13,8 @@ type RedisMethod interface {
 	Set(key, value string) error
 	Delete(key string) error
 	SETNX(key string) (bool, error)
-	HINCRBY(path, key string) error
+	HINCRBY(value, key string) error
+	HGETALL(value string) (map[string]string, error)
 }
 
 // RedisConfig is list config to create redis client
@@ -99,14 +100,28 @@ func (c *Client) SETNX(key string) (bool, error) {
 }
 
 // HINCRBY increase a key from the Redis database based on key
-func (c *Client) HINCRBY(path, key string) error {
+func (c *Client) HINCRBY(value, key string) error {
 	conn := c.pool.Get()
 	defer conn.Close()
 
-	_, err := conn.Do("HINCRBY", path, key, 1)
+	_, err := conn.Do("HINCRBY", value, key, 1)
 	if err != nil {
 		return err
 	}
 
 	return err
+}
+
+// HGETALL is func to get all metrics from Redis database based on key
+func (c *Client) HGETALL(value string) (map[string]string, error) {
+	var values map[string]string
+	conn := c.pool.Get()
+	defer conn.Close()
+
+	values, err := redis.StringMap(conn.Do("HGETALL", value))
+	if err != nil {
+		fmt.Println(err)
+		return values, err
+	}
+	return values, err
 }
