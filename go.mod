@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/elastic/go-elasticsearch/v7 v7.17.7
+	github.com/golang/mock v1.6.0
 	github.com/gomodule/redigo v1.8.9
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/vault/api v1.8.3

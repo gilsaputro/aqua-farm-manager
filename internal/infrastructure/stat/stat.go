@@ -22,10 +22,15 @@ var (
 // StatStore is list method to redis
 type StatStore interface {
 	IngestMetrics(urlID, method, ua string) error
-	GetMetrics(urlID, method string) (string, string, error)
+	GetMetrics(urlID, method string) (Metrics, error)
 	BackupMetrics(urlID, method string, request, uniqagent int) error
 	MigrateMetrics(url, method, request, uniqagent string) error
-	GetStatData(urlID, method string) (string, string, error)
+	GetStatData(urlID, method string) (Metrics, error)
+}
+
+type Metrics struct {
+	Request   string
+	UniqAgent string
 }
 
 // Stat is list dependencies stat store
@@ -74,19 +79,27 @@ func (s *Stat) IngestMetrics(urlID, method, ua string) error {
 }
 
 // GetMetrics is func to get api metrics from redis
-func (s *Stat) GetMetrics(urlID, method string) (string, string, error) {
+func (s *Stat) GetMetrics(urlID, method string) (Metrics, error) {
 	var err error
 	pathKey := generatePathKeyMetrics(urlID, method)
 
 	metrics, err := s.redis.HGETALL(pathKey)
 	if err != nil {
-		return "", "", err
+		return Metrics{Request: "0", UniqAgent: "0"}, err
 	}
 
 	cUA := metrics[CountUA]
 	cReq := metrics[CountRequested]
 
-	return cUA, cReq, nil
+	if len(cUA) == 0 {
+		cUA = "0"
+	}
+
+	if len(cReq) == 0 {
+		cReq = "0"
+	}
+
+	return Metrics{Request: cReq, UniqAgent: cUA}, nil
 }
 
 // BackupMetrics is func to backup metrics from redis to postgres
@@ -140,7 +153,7 @@ func (s *Stat) MigrateMetrics(urlID, method, request, uniqagent string) error {
 }
 
 // GetStatData is func to metrics from postgres
-func (s *Stat) GetStatData(urlID, method string) (string, string, error) {
+func (s *Stat) GetStatData(urlID, method string) (Metrics, error) {
 	var err error
 	pathKey := generatePathKeyMetrics(urlID, method)
 
@@ -149,13 +162,13 @@ func (s *Stat) GetStatData(urlID, method string) (string, string, error) {
 	}
 	err = s.pg.GetStatRecodByKey(statMetrics)
 	if err != nil {
-		return "", "", err
+		return Metrics{"0", "0"}, err
 	}
 
 	cUA := strconv.Itoa(statMetrics.UniqAgent)
 	cReq := strconv.Itoa(statMetrics.Request)
 
-	return cUA, cReq, nil
+	return Metrics{Request: cReq, UniqAgent: cUA}, nil
 }
 
 func generatePathKeyMetrics(urlID string, method string) string {

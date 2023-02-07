@@ -20,7 +20,8 @@ type StatHandler struct {
 // NewMiddleware is func to create StatHandler Struct
 func NewStatHandler(stat stat.StatDomain, options ...Option) *StatHandler {
 	handler := &StatHandler{
-		stat: stat,
+		stat:         stat,
+		timeoutInSec: defaultTimeout,
 	}
 
 	// Apply options

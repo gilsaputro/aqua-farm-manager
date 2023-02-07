@@ -43,13 +43,13 @@ func (s *Stat) GenerateStatAPI() map[string]StatMetrics {
 		url := strconv.Itoa(id.Int())
 		listmethod := app.UrlIDMethod[id]
 		for _, method := range listmethod {
-			ua, req, err := s.store.GetMetrics(url, method)
+			metric, err := s.store.GetMetrics(url, method)
 			if err != nil {
 				continue
 			}
 
-			count_req, _ := strconv.Atoi(req)
-			count_ua, _ := strconv.Atoi(ua)
+			count_req, _ := strconv.Atoi(metric.Request)
+			count_ua, _ := strconv.Atoi(metric.UniqAgent)
 			if count_req != 0 || count_ua != 0 {
 				key := method + " " + id.String()
 				metrics[key] = StatMetrics{
@@ -82,13 +82,13 @@ func (s *Stat) BackUpStat() {
 		url := strconv.Itoa(id.Int())
 		listmethod := app.UrlIDMethod[id]
 		for _, method := range listmethod {
-			ua, req, err := s.store.GetMetrics(url, method)
+			metric, err := s.store.GetMetrics(url, method)
 			if err != nil {
 				continue
 			}
 
-			count_req, _ := strconv.Atoi(req)
-			count_ua, _ := strconv.Atoi(ua)
+			count_req, _ := strconv.Atoi(metric.Request)
+			count_ua, _ := strconv.Atoi(metric.UniqAgent)
 
 			err = s.store.BackupMetrics(url, method, count_req, count_ua)
 			if err != nil {
@@ -109,13 +109,12 @@ func (s *Stat) MigrateStat() {
 			wg.Add(1)
 			go func(url, method string) {
 				defer wg.Done()
-				var req, ua string
-				ua, req, err := s.store.GetStatData(url, method)
+				metric, err := s.store.GetStatData(url, method)
 				if err != nil {
 					return
 				}
 
-				err = s.store.MigrateMetrics(url, method, req, ua)
+				err = s.store.MigrateMetrics(url, method, metric.Request, metric.UniqAgent)
 				if err != nil {
 					fmt.Println("[MigrateStat]-Got Error:", err)
 					return
