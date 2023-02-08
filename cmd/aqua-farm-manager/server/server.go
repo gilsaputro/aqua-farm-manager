@@ -14,9 +14,11 @@ import (
 	"aqua-farm-manager/internal/app/farm"
 	"aqua-farm-manager/internal/app/middleware"
 	"aqua-farm-manager/internal/app/stat"
+	"aqua-farm-manager/internal/app/trackingevent"
 	statdomain "aqua-farm-manager/internal/domain/stat"
 	statinfra "aqua-farm-manager/internal/infrastructure/stat"
 	"aqua-farm-manager/pkg/elasticsearch"
+	"aqua-farm-manager/pkg/nsq"
 	"aqua-farm-manager/pkg/postgres"
 	"aqua-farm-manager/pkg/redis"
 	"aqua-farm-manager/pkg/vault"
@@ -31,6 +33,7 @@ type Server struct {
 	vault       vault.VaultMethod
 	redis       redis.RedisMethod
 	postgres    postgres.PostgresMethod
+	nsqProducer nsq.NsqMethod
 	es          elasticsearch.ElasticSearchMethod
 	middleware  middleware.Middleware
 	statDomain  statdomain.StatDomain
@@ -119,6 +122,17 @@ func NewServer() (*Server, error) {
 		log.Println("Init-Postgres")
 	}
 
+	// Init NSQ Producer
+	{
+		os.Setenv("NSQD_VERBOSE", "false")
+		nsqProducer, err := nsq.NewNsqClient(s.cfg.NSQ.ProducerHost)
+		if err != nil {
+			fmt.Print("[Got Error]-NSQ Producer :", err)
+		}
+		s.nsqProducer = nsqProducer
+		log.Println("Init-NSQ Producer")
+	}
+
 	// Init ElasticSearch
 	{
 		esMethod, err := elasticsearch.CreateESClient(s.cfg.ES.Host)
@@ -154,7 +168,7 @@ func NewServer() (*Server, error) {
 	// ======== Init Dependencies Handler/App ========
 	// Init Middleware
 	{
-		mdl := middleware.NewMiddleware(s.statDomain)
+		mdl := middleware.NewMiddleware(s.cfg.TrackingEvent.Topic, s.nsqProducer)
 		s.middleware = mdl
 		log.Println("Init-NewMiddleware")
 	}
@@ -177,6 +191,23 @@ func NewServer() (*Server, error) {
 
 		log.Println("Init-StatHandler")
 		s.statHandler = *handler
+	}
+
+	// Init Tracking Event Consumer
+	{
+		consumer := trackingevent.NewTrackingEverntConsumer(
+			s.cfg.TrackingEvent.Topic,
+			s.cfg.TrackingEvent.Channel,
+			s.cfg.NSQ.ConsumerHost,
+			s.cfg.TrackingEvent.MaxInFlight,
+			s.cfg.TrackingEvent.NumConsumer,
+			s.cfg.TrackingEvent.TimeoutInSec,
+			s.statDomain)
+		err := consumer.Start()
+		if err != nil {
+			fmt.Print("[Got Error]-NewTrackingEverntConsumer :", err)
+		}
+		log.Println("Init-TrackingEverntConsumer")
 	}
 
 	// Init Stat Backup Cron

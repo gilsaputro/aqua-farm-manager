@@ -4,6 +4,7 @@ import (
 	"aqua-farm-manager/internal/app"
 	"aqua-farm-manager/internal/infrastructure/stat"
 	"fmt"
+	"net/http"
 	"strconv"
 	"sync"
 
@@ -13,9 +14,16 @@ import (
 // StatDomain is list method for stat domain
 type StatDomain interface {
 	GenerateStatAPI() map[string]StatMetrics
-	IngestStatAPI(path, method, ua string)
+	IngestStatAPI(IngestStatRequest)
 	BackUpStat()
 	MigrateStat()
+}
+
+type IngestStatRequest struct {
+	Path   string
+	Method string
+	Ua     string
+	Code   int
 }
 
 // Stat is list dependencies stat domain
@@ -25,8 +33,10 @@ type Stat struct {
 
 // StatMetrics denotes list stat value of api
 type StatMetrics struct {
-	UniqAgent int
-	Requested int
+	NumUniqAgent int
+	NumRequested int
+	NumSuccess   int
+	NumError     int
 }
 
 // NewStatDomain is func to generat StatDomain interface
@@ -43,18 +53,25 @@ func (s *Stat) GenerateStatAPI() map[string]StatMetrics {
 		url := strconv.Itoa(id.Int())
 		listmethod := app.UrlIDMethod[id]
 		for _, method := range listmethod {
-			metric, err := s.store.GetMetrics(url, method)
+			metric, err := s.store.GetMetrics(stat.GetMetricsRequest{
+				UrlID:  url,
+				Method: method,
+			})
 			if err != nil {
 				continue
 			}
 
-			count_req, _ := strconv.Atoi(metric.Request)
-			count_ua, _ := strconv.Atoi(metric.UniqAgent)
+			count_req, _ := strconv.Atoi(metric.NumRequest)
+			count_ua, _ := strconv.Atoi(metric.NumUniqAgent)
+			count_suc, _ := strconv.Atoi(metric.NumSuccess)
+			count_err, _ := strconv.Atoi(metric.NumError)
 			if count_req != 0 || count_ua != 0 {
 				key := method + " " + id.String()
 				metrics[key] = StatMetrics{
-					UniqAgent: count_ua,
-					Requested: count_req,
+					NumUniqAgent: count_ua,
+					NumRequested: count_req,
+					NumSuccess:   count_suc,
+					NumError:     count_err,
 				}
 			}
 		}
@@ -63,13 +80,20 @@ func (s *Stat) GenerateStatAPI() map[string]StatMetrics {
 }
 
 // IngestStatAPI is func to ingest stat metrics based on path and method
-func (s *Stat) IngestStatAPI(path, method, ua string) {
-	urlID := app.UrlIDValue[path]
+func (s *Stat) IngestStatAPI(r IngestStatRequest) {
+	urlID := app.UrlIDValue[r.Path]
 
 	if urlID.Int() != 0 {
-		hash := fmt.Sprintf("%x", sha3.Sum256([]byte(ua)))
+		hash := fmt.Sprintf("%x", sha3.Sum256([]byte(r.Ua)))
 		url := strconv.Itoa(urlID.Int())
-		err := s.store.IngestMetrics(url, method, hash)
+		err := s.store.IngestMetrics(
+			stat.IngestMetricsRequest{
+				UrlID:     url,
+				Method:    r.Method,
+				UA:        hash,
+				IsSuccess: r.Code == http.StatusOK,
+			},
+		)
 		if err != nil {
 			fmt.Println("[IngestStatAPI]-Got Error:", err)
 		}
@@ -82,15 +106,26 @@ func (s *Stat) BackUpStat() {
 		url := strconv.Itoa(id.Int())
 		listmethod := app.UrlIDMethod[id]
 		for _, method := range listmethod {
-			metric, err := s.store.GetMetrics(url, method)
+			metric, err := s.store.GetMetrics(stat.GetMetricsRequest{UrlID: url, Method: method})
 			if err != nil {
 				continue
 			}
 
-			count_req, _ := strconv.Atoi(metric.Request)
-			count_ua, _ := strconv.Atoi(metric.UniqAgent)
+			count_req, _ := strconv.Atoi(metric.NumRequest)
+			count_ua, _ := strconv.Atoi(metric.NumUniqAgent)
+			count_suc, _ := strconv.Atoi(metric.NumSuccess)
+			count_err, _ := strconv.Atoi(metric.NumError)
 
-			err = s.store.BackupMetrics(url, method, count_req, count_ua)
+			err = s.store.BackupMetrics(stat.BackupMetricsRequest{
+				UrlID:  url,
+				Method: method,
+				Metrics: stat.MetricsRequest{
+					NumRequest:   count_req,
+					NumUniqAgent: count_ua,
+					NumSuccess:   count_suc,
+					NumError:     count_err,
+				},
+			})
 			if err != nil {
 				fmt.Println("[BackUpStat]-Got Error:", err)
 				continue
@@ -109,12 +144,21 @@ func (s *Stat) MigrateStat() {
 			wg.Add(1)
 			go func(url, method string) {
 				defer wg.Done()
-				metric, err := s.store.GetStatData(url, method)
+				metric, err := s.store.GetStatData(stat.GetStatDataRequest{
+					UrlID:  url,
+					Method: method,
+				})
 				if err != nil {
 					return
 				}
 
-				err = s.store.MigrateMetrics(url, method, metric.Request, metric.UniqAgent)
+				err = s.store.MigrateMetrics(
+					stat.MigrateMetricsRequest{
+						UrlID:   url,
+						Method:  method,
+						Metrics: metric,
+					},
+				)
 				if err != nil {
 					fmt.Println("[MigrateStat]-Got Error:", err)
 					return

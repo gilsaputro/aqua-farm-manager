@@ -61,15 +61,15 @@ func (mr *MockStatDomainMockRecorder) GenerateStatAPI() *gomock.Call {
 }
 
 // IngestStatAPI mocks base method.
-func (m *MockStatDomain) IngestStatAPI(path, method, ua string) {
+func (m *MockStatDomain) IngestStatAPI(arg0 stat.IngestStatRequest) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "IngestStatAPI", path, method, ua)
+	m.ctrl.Call(m, "IngestStatAPI", arg0)
 }
 
 // IngestStatAPI indicates an expected call of IngestStatAPI.
-func (mr *MockStatDomainMockRecorder) IngestStatAPI(path, method, ua interface{}) *gomock.Call {
+func (mr *MockStatDomainMockRecorder) IngestStatAPI(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IngestStatAPI", reflect.TypeOf((*MockStatDomain)(nil).IngestStatAPI), path, method, ua)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IngestStatAPI", reflect.TypeOf((*MockStatDomain)(nil).IngestStatAPI), arg0)
 }
 
 // MigrateStat mocks base method.

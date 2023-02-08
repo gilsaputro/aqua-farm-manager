@@ -10,8 +10,17 @@ postgres :
   postgres_config : <postgres_config>
 es :
   host : http://localhost:9200
+nsq :
+  producer_host : localhost:4150
+  consumer_host : localhost:4161
 farm_handler :
   timeout_in_sec : 5
 stat_handler :
   timeout_in_sec : 5
   backup_time_in_minute : 5
+tracking_event :
+  topic : aqua_farm_tracking_event
+  channel : tracking_event
+  max_in_flight: 30
+  num_of_consumer: 2
+  timeout_in_sec: 3

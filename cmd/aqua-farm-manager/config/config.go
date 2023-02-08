@@ -11,12 +11,14 @@ import (
 
 // Config struct to hold the configuration data for server
 type Config struct {
-	Vault       Vault    `yaml:"vault"`
-	Redis       Redis    `yaml:"redis"`
-	Postgres    Postgres `yaml:"postgres"`
-	ES          ES       `yaml:"es"`
-	FarmHandler Handler  `yaml:"farm_handler"`
-	StatHandler Handler  `yaml:"stat_handler"`
+	Vault         Vault    `yaml:"vault"`
+	Redis         Redis    `yaml:"redis"`
+	Postgres      Postgres `yaml:"postgres"`
+	ES            ES       `yaml:"es"`
+	NSQ           NSQ      `yaml:"nsq"`
+	FarmHandler   Handler  `yaml:"farm_handler"`
+	StatHandler   Handler  `yaml:"stat_handler"`
+	TrackingEvent Consumer `yaml:"tracking_event"`
 }
 
 // Vault struct to hold the configuration data for vault
@@ -28,6 +30,21 @@ type Vault struct {
 // Postgres struct to hold the configuration data for postgres
 type Postgres struct {
 	Config string `yaml:"postgres_config"`
+}
+
+// NSQ struct to hold the configuration data for nsq
+type NSQ struct {
+	ProducerHost string `yaml:"producer_host"`
+	ConsumerHost string `yaml:"consumer_host"`
+}
+
+// Consumer struct to hold the configuration data for Consumer
+type Consumer struct {
+	Topic        string `yaml:"topic"`
+	Channel      string `yaml:"channel"`
+	MaxInFlight  int    `yaml:"max_in_flight"`
+	NumConsumer  int    `yaml:"num_of_consumer"`
+	TimeoutInSec int    `yaml:"timeout_in_sec"`
 }
 
 // ES struct to hold the configuration data for ES

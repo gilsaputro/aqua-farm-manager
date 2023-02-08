@@ -57,7 +57,7 @@ func (h *StatHandler) GetStatHandler(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	var response Response
-	var code int = 200
+	var code int = http.StatusOK
 
 	defer func() {
 		response.Code = code
@@ -85,12 +85,10 @@ func (h *StatHandler) GetStatHandler(w http.ResponseWriter, r *http.Request) {
 
 	select {
 	case <-ctx.Done():
+		code = http.StatusGatewayTimeout
+		err = fmt.Errorf("Timeout")
 		return
 	case err = <-errChan:
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
 	}
 
 	response = mapResponse(metrics)
@@ -101,11 +99,13 @@ func mapResponse(metrics map[string]stat.StatMetrics) Response {
 	var mapMetrics = make(map[string]Metrics, len(metrics))
 	for key, value := range metrics {
 		mapMetrics[key] = Metrics{
-			Count:           value.Requested,
-			UniqueUserAgent: value.UniqAgent,
+			Count:           value.NumRequested,
+			UniqueUserAgent: value.NumUniqAgent,
+			NumSuccess:      value.NumSuccess,
+			NumError:        value.NumError,
 		}
 	}
-	res.Data = mapMetrics
+	res.Data = &mapMetrics
 	return res
 }
 

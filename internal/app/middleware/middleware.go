@@ -1,22 +1,39 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
-	"sync"
 
-	"aqua-farm-manager/internal/domain/stat"
+	"aqua-farm-manager/internal/app/trackingevent"
+	"aqua-farm-manager/pkg/nsq"
 )
 
 // Middleware struct is list dependecies to run Middleware func
 type Middleware struct {
-	stat stat.StatDomain
+	nsq   nsq.NsqMethod
+	topic string
 }
 
 // NewMiddleware is func to create Middleware Struct
-func NewMiddleware(stat stat.StatDomain) Middleware {
+func NewMiddleware(topic string, nsq nsq.NsqMethod) Middleware {
 	return Middleware{
-		stat: stat,
+		nsq:   nsq,
+		topic: topic,
 	}
+}
+
+// statusResponseWriter is a custom ResponseWriter type that wraps an existing http.ResponseWriter
+// and adds the ability to track the HTTP status code
+type statusResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+// WriteHeader is a custom implementation of the http.ResponseWriter's WriteHeader method
+// that tracks the HTTP status code by storing it in the statusCode field.
+func (w *statusResponseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
 }
 
 // Middleware is func to validate before execute the handler
@@ -25,15 +42,23 @@ func (m *Middleware) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		path := r.URL.Path
 		method := r.Method
 		ua := r.UserAgent()
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		sw := &statusResponseWriter{ResponseWriter: w}
 
-			m.stat.IngestStatAPI(path, method, ua)
-		}()
+		next.ServeHTTP(sw, r)
+		m.publishToTrackingEvent(path, method, ua, sw.statusCode)
+	}
+}
 
-		next.ServeHTTP(w, r)
-		wg.Wait()
+func (m *Middleware) publishToTrackingEvent(path, method, ua string, code int) {
+	msg := trackingevent.TrackingEventMessage{
+		Path:   path,
+		Code:   code,
+		Method: method,
+		UA:     ua,
+	}
+
+	err := m.nsq.Publish(m.topic, msg)
+	if err != nil {
+		fmt.Println("Middleware-Got Error while Publish :", err)
 	}
 }

@@ -33,7 +33,9 @@ type FarmPondsMapping struct {
 // StatMetrics struct to store StatMetrics information
 type StatMetrics struct {
 	gorm.Model
-	Key       string
-	Request   int
-	UniqAgent int
+	Key        string
+	Request    int
+	UniqAgent  int
+	NumSuccess int
+	NumError   int
 }
