@@ -5,7 +5,7 @@ import "github.com/jinzhu/gorm"
 // Farms struct to store farm information
 type Farms struct {
 	gorm.Model
-	Name     string `gorm:"unique"`
+	Name     string
 	Location string
 	Owner    string
 	Area     string
@@ -15,7 +15,7 @@ type Farms struct {
 // Ponds struct to store ponds information
 type Ponds struct {
 	gorm.Model
-	Name         string `gorm:"unique"`
+	Name         string
 	Capacity     float64
 	Depth        float64
 	WaterQuality float64

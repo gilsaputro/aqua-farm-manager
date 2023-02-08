@@ -4,25 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"aqua-farm-manager/internal/domain/farm"
 	utilhttp "aqua-farm-manager/pkg/utilhttp"
+
+	"github.com/gorilla/mux"
 )
 
-// UpdateFarmRequest is list request parameter for Update Api
-type UpdateFarmRequest struct {
-	Name     string `json:"name"`
-	Location string `json:"location"`
-	Owner    string `json:"owner"`
-	Area     string `json:"area"`
-}
-
-// UpdateFarmResponse is list response parameter for Update Api
-type UpdateFarmResponse struct {
+// FFarmResponse is list response parameter for GetByID Api
+type GetByIDFarmResponse struct {
 	ID       uint   `json:"id"`
 	Name     string `json:"name"`
 	Location string `json:"location"`
@@ -30,8 +25,8 @@ type UpdateFarmResponse struct {
 	Area     string `json:"area"`
 }
 
-// UpdateFarmHandler is func handler for Update Farm data
-func (h *FarmHandler) UpdateFarmHandler(w http.ResponseWriter, r *http.Request) {
+// GetByIDFarmHandler is func handler for create Farm data
+func (h *FarmHandler) GetByIDFarmHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(h.timeoutInSec)*time.Second)
 	defer cancel()
 
@@ -49,44 +44,26 @@ func (h *FarmHandler) UpdateFarmHandler(w http.ResponseWriter, r *http.Request) 
 
 		data, errMarshal := json.Marshal(response)
 		if errMarshal != nil {
-			log.Println("[UpdateFarmHandler]-Error Marshal Response :", err)
+			log.Println("[GetByIDFarmHandler]-Error Marshal Response :", err)
 			code = http.StatusInternalServerError
 			data = []byte(`{"code":500,"message":"Internal Server Error"}`)
 		}
 		utilhttp.WriteResponse(w, data, code)
 	}()
 
-	var body UpdateFarmRequest
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		code = http.StatusBadRequest
-		err = fmt.Errorf("Bad Request")
-		return
-	}
-
-	err = json.Unmarshal(data, &body)
-	if err != nil {
-		code = http.StatusBadRequest
-		err = fmt.Errorf("Bad Request")
-		return
-	}
-
 	// checking valid body
-	if len(body.Name) < 1 || (len(body.Location) < 1 && len(body.Area) < 1 && len(body.Owner) < 1) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
 		code = http.StatusBadRequest
 		err = fmt.Errorf("Invalid Parameter Request")
 		return
 	}
 
 	errChan := make(chan error, 1)
-	var res farm.UpdateDomainResponse
+	var res farm.GetFarmInfoByIDResponse
 	go func(ctx context.Context) {
-		res, err = h.domain.UpdateFarmInfo(farm.UpdateDomainRequest{
-			Name:     body.Name,
-			Location: body.Location,
-			Owner:    body.Owner,
-			Area:     body.Area,
-		})
+		res, err = h.domain.GetFarmInfoByID(uint(id))
 		errChan <- err
 	}(ctx)
 
@@ -95,8 +72,8 @@ func (h *FarmHandler) UpdateFarmHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == farm.ErrDuplicateFarm {
-				code = http.StatusBadRequest
+			if strings.Contains(err.Error(), "not found") {
+				code = http.StatusNotFound
 			} else {
 				code = http.StatusInternalServerError
 			}
@@ -104,12 +81,12 @@ func (h *FarmHandler) UpdateFarmHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	response = mapResonseUpdate(res)
+	response = mapResonseGetByID(res)
 }
 
-func mapResonseUpdate(r farm.UpdateDomainResponse) utilhttp.StandardResponse {
+func mapResonseGetByID(r farm.GetFarmInfoByIDResponse) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
-	data := UpdateFarmResponse{
+	data := GetByIDFarmResponse{
 		ID:       r.ID,
 		Name:     r.Name,
 		Location: r.Location,

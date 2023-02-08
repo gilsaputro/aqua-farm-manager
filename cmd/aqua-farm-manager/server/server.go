@@ -244,6 +244,9 @@ func NewServer() (*Server, error) {
 		r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.UpdateFarmHandler)).Methods("PUT")
 		r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.DeleteFarmHandler)).Methods("DELETE")
 
+		// Init Farm Get By ID
+		r.HandleFunc(app.FarmsID.String(), s.middleware.Middleware(s.farmHandler.GetByIDFarmHandler)).Methods("GET")
+
 		// Init Stat Path
 		statPath := app.Stat
 		r.HandleFunc(statPath.String(), s.statHandler.GetStatHandler).Methods("GET")

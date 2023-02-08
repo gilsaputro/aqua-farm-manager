@@ -23,7 +23,7 @@ type CreateFarmRequest struct {
 
 // CreateFarmResponse is list response parameter for Create Api
 type CreateFarmResponse struct {
-	FarmID uint `json:"Farm_id"`
+	ID uint `json:"id"`
 }
 
 // CreateFarmHandler is func handler for create Farm data
@@ -68,16 +68,16 @@ func (h *FarmHandler) CreateFarmHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// checking valid body
-	if len(body.Name) < 1 {
+	if len(body.Name) < 1 || (len(body.Location) < 1 && len(body.Area) < 1 && len(body.Owner) < 1) {
 		code = http.StatusBadRequest
 		err = fmt.Errorf("Invalid Parameter Request")
 		return
 	}
 
 	errChan := make(chan error, 1)
-	var res farm.FarmDomainResponse
+	var res farm.CreateDomainResponse
 	go func(ctx context.Context) {
-		res, err = h.domain.CreateFarmInfo(farm.FarmDomainRequest{
+		res, err = h.domain.CreateFarmInfo(farm.CreateDomainRequest{
 			Name:     body.Name,
 			Location: body.Location,
 			Owner:    body.Owner,
@@ -91,18 +91,22 @@ func (h *FarmHandler) CreateFarmHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case err = <-errChan:
 		if err != nil {
-			code = http.StatusInternalServerError
+			if err == farm.ErrDuplicateFarm {
+				code = http.StatusBadRequest
+			} else {
+				code = http.StatusInternalServerError
+			}
 			return
 		}
 	}
 
-	response = mapResonse(res)
+	response = mapResonseCreate(res)
 }
 
-func mapResonse(r farm.FarmDomainResponse) utilhttp.StandardResponse {
+func mapResonseCreate(r farm.CreateDomainResponse) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
 	data := CreateFarmResponse{
-		FarmID: r.FarmID,
+		ID: r.ID,
 	}
 	res.Data = data
 	return res
