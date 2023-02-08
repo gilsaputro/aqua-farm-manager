@@ -56,7 +56,7 @@ func (h *StatHandler) GetStatHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	var err error
-	var response Response
+	var response utilhttp.StandardResponse
 	var code int = http.StatusOK
 
 	defer func() {
@@ -94,8 +94,8 @@ func (h *StatHandler) GetStatHandler(w http.ResponseWriter, r *http.Request) {
 	response = mapResponse(metrics)
 }
 
-func mapResponse(metrics map[string]stat.StatMetrics) Response {
-	var res Response
+func mapResponse(metrics map[string]stat.StatMetrics) utilhttp.StandardResponse {
+	var res utilhttp.StandardResponse
 	var mapMetrics = make(map[string]Metrics, len(metrics))
 	for key, value := range metrics {
 		mapMetrics[key] = Metrics{

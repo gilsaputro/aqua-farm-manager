@@ -24,7 +24,7 @@ var (
 	CountError     = "Count_Error"
 )
 
-// StatStore is list method to redis
+// StatStore is set of methods for interacting with a metric storage system
 type StatStore interface {
 	IngestMetrics(IngestMetricsRequest) error
 	GetMetrics(GetMetricsRequest) (MetricsInfo, error)
@@ -122,7 +122,7 @@ func (s *Stat) GetMetrics(r GetMetricsRequest) (MetricsInfo, error) {
 	}
 
 	return MetricsInfo{
-		NumRequest:   numReq,
+		NumRequest:   numUA,
 		NumUniqAgent: numReq,
 		NumSuccess:   numSuc,
 		NumError:     numErr,

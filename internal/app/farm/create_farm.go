@@ -2,29 +2,88 @@ package farm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
+	"aqua-farm-manager/internal/domain/farm"
 	utilhttp "aqua-farm-manager/pkg/utilhttp"
 )
 
-func (fh *FarmHandler) CreateFarmHandler(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(fh.timeoutInSec)*time.Second)
+// CreateFarmRequest is list request parameter for Create Api
+type CreateFarmRequest struct {
+	Name     string `json:"name"`
+	Location string `json:"location"`
+	Owner    string `json:"owner"`
+	Area     string `json:"area"`
+}
+
+// CreateFarmResponse is list response parameter for Create Api
+type CreateFarmResponse struct {
+	FarmID uint `json:"Farm_id"`
+}
+
+// CreateFarmHandler is func handler for create Farm data
+func (h *FarmHandler) CreateFarmHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(h.timeoutInSec)*time.Second)
 	defer cancel()
 
 	var err error
-	var response []byte
-	var code int = 200
+	var response utilhttp.StandardResponse
+	var code int = http.StatusOK
 
 	defer func() {
-		utilhttp.WriteResponse(w, response, code)
+		response.Code = code
+		if err == nil {
+			response.Message = "success"
+		} else {
+			response.Message = err.Error()
+		}
+
+		data, errMarshal := json.Marshal(response)
+		if errMarshal != nil {
+			log.Println("[CreateFarmHandler]-Error Marshal Response :", err)
+			code = http.StatusInternalServerError
+			data = []byte(`{"code":500,"message":"Internal Server Error"}`)
+		}
+		utilhttp.WriteResponse(w, data, code)
 	}()
 
-	errChan := make(chan error, 1)
+	var body CreateFarmRequest
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		code = http.StatusBadRequest
+		err = fmt.Errorf("Bad Request")
+		return
+	}
 
+	err = json.Unmarshal(data, &body)
+	if err != nil {
+		code = http.StatusBadRequest
+		err = fmt.Errorf("Bad Request")
+		return
+	}
+
+	// checking valid body
+	if len(body.Name) < 1 {
+		code = http.StatusBadRequest
+		err = fmt.Errorf("Invalid Parameter Request")
+		return
+	}
+
+	errChan := make(chan error, 1)
+	var res farm.FarmDomainResponse
 	go func(ctx context.Context) {
-		errChan <- nil
+		res, err = h.domain.CreateFarmInfo(farm.FarmDomainRequest{
+			Name:     body.Name,
+			Location: body.Location,
+			Owner:    body.Owner,
+			Area:     body.Area,
+		})
+		errChan <- err
 	}(ctx)
 
 	select {
@@ -32,10 +91,19 @@ func (fh *FarmHandler) CreateFarmHandler(w http.ResponseWriter, r *http.Request)
 		return
 	case err = <-errChan:
 		if err != nil {
-			fmt.Println(err)
+			code = http.StatusInternalServerError
 			return
 		}
 	}
 
-	response = []byte(`{"hello":"POST"}`)
+	response = mapResonse(res)
+}
+
+func mapResonse(r farm.FarmDomainResponse) utilhttp.StandardResponse {
+	var res utilhttp.StandardResponse
+	data := CreateFarmResponse{
+		FarmID: r.FarmID,
+	}
+	res.Data = data
+	return res
 }

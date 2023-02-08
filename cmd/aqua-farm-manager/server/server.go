@@ -15,7 +15,9 @@ import (
 	"aqua-farm-manager/internal/app/middleware"
 	"aqua-farm-manager/internal/app/stat"
 	"aqua-farm-manager/internal/app/trackingevent"
+	farmdomain "aqua-farm-manager/internal/domain/farm"
 	statdomain "aqua-farm-manager/internal/domain/stat"
+	farminfra "aqua-farm-manager/internal/infrastructure/farm"
 	statinfra "aqua-farm-manager/internal/infrastructure/stat"
 	"aqua-farm-manager/pkg/elasticsearch"
 	"aqua-farm-manager/pkg/nsq"
@@ -39,6 +41,8 @@ type Server struct {
 	statDomain  statdomain.StatDomain
 	statInfra   statinfra.StatStore
 	statHandler stat.StatHandler
+	farmDomain  farmdomain.FarmDomain
+	farmInfra   farminfra.FarmStore
 	farmHandler farm.FarmHandler
 	httpServer  *http.Server
 }
@@ -145,10 +149,17 @@ func NewServer() (*Server, error) {
 	}
 
 	// ======== Init Dependencies Infra ========
+	// Init Stat Infra
 	{
 		statinf := statinfra.NewStatStore(s.redis, s.postgres)
 		s.statInfra = statinf
 		log.Println("Init-NewStatStore")
+	}
+	// Init Domain Infra
+	{
+		farmInf := farminfra.NewFarmStore(s.postgres)
+		s.farmInfra = farmInf
+		log.Println("Init-NewFarmStore")
 	}
 
 	// ======== Init Dependencies Domain ========
@@ -159,10 +170,11 @@ func NewServer() (*Server, error) {
 		log.Println("Init-NewStatDomain")
 	}
 
-	// Init Stat Migrator
+	// Init Farm Domain
 	{
-		s.statDomain.MigrateStat()
-		log.Println("Init-MigrateStatMetrics From Postgres To Redis")
+		farmDom := farmdomain.NewFarmDomain(s.farmInfra)
+		s.farmDomain = farmDom
+		log.Println("Init-NewFarmDomain")
 	}
 
 	// ======== Init Dependencies Handler/App ========
@@ -173,11 +185,17 @@ func NewServer() (*Server, error) {
 		log.Println("Init-NewMiddleware")
 	}
 
+	// Init Stat Migrator
+	{
+		s.statDomain.MigrateStat()
+		log.Println("Init-MigrateStatMetrics From Postgres To Redis")
+	}
+
 	// Init FarmHandler
 	{
 		var opts []farm.Option
 		opts = append(opts, farm.WithTimeoutOptions(s.cfg.FarmHandler.TimeoutInSec))
-		handler := farm.NewFarmHandler(opts...)
+		handler := farm.NewFarmHandler(s.farmDomain, opts...)
 
 		log.Println("Init-FarmHandler")
 		s.farmHandler = *handler

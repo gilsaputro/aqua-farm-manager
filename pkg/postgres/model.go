@@ -12,7 +12,7 @@ type Farms struct {
 	Status   int
 }
 
-// Keyword struct to store keyword information
+// Ponds struct to store ponds information
 type Ponds struct {
 	gorm.Model
 	Name         string `gorm:"unique"`
@@ -26,6 +26,7 @@ type Ponds struct {
 
 // FarmPondsMapping struct to store FarmPondsMapping information
 type FarmPondsMapping struct {
+	gorm.Model
 	FarmID  uint
 	PondsID uint
 }

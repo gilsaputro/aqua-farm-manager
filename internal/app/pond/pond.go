@@ -1,8 +1,11 @@
 package pond
 
+import "aqua-farm-manager/internal/domain/pond"
+
 // PondHandler list dependencies for pond handler
 type PondHandler struct {
 	timeoutInSec int
+	domain       pond.PondDomain
 }
 
 // Option set options for http handler config
@@ -13,8 +16,10 @@ const (
 )
 
 // NewPondHandler is func to create http Pond handler
-func NewPondHandler(options ...Option) *PondHandler {
-	handler := &PondHandler{}
+func NewPondHandler(domain pond.PondDomain, options ...Option) *PondHandler {
+	handler := &PondHandler{
+		domain: domain,
+	}
 
 	// Apply options
 	for _, opt := range options {
