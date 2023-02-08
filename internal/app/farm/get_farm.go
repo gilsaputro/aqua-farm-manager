@@ -32,6 +32,7 @@ type FarmInfo struct {
 	Location string `json:"location"`
 	Owner    string `json:"owner"`
 	Area     string `json:"area"`
+	PondIDs  []uint `json:"list_pondID"`
 }
 
 // GetFarmHandler is func handler for create Farm data
@@ -125,6 +126,7 @@ func mapResonseGet(farms []farm.GetFarmInfoByIDResponse, next int) utilhttp.Stan
 			Location: farm.Location,
 			Owner:    farm.Owner,
 			Area:     farm.Area,
+			PondIDs:  farm.PondIDs,
 		}
 
 		list = append(list, info)

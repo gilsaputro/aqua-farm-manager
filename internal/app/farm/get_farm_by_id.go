@@ -18,11 +18,22 @@ import (
 
 // FFarmResponse is list response parameter for GetByID Api
 type GetByIDFarmResponse struct {
-	ID       uint   `json:"id"`
-	Name     string `json:"name"`
-	Location string `json:"location"`
-	Owner    string `json:"owner"`
-	Area     string `json:"area"`
+	ID       uint       `json:"id"`
+	Name     string     `json:"name"`
+	Location string     `json:"location"`
+	Owner    string     `json:"owner"`
+	Area     string     `json:"area"`
+	PondInfo []PondInfo `json:"pond_info"`
+}
+
+type PondInfo struct {
+	ID           uint    `json:"id"`
+	Name         string  `json:"name"`
+	Capacity     float64 `json:"capacity"`
+	Depth        float64 `json:"depth"`
+	WaterQuality float64 `json:"water_quality"`
+	Species      string  `json:"species"`
+	Status       int     `json:"status"`
 }
 
 // GetByIDFarmHandler is func handler for create Farm data
@@ -86,13 +97,29 @@ func (h *FarmHandler) GetByIDFarmHandler(w http.ResponseWriter, r *http.Request)
 
 func mapResonseGetByID(r farm.GetFarmInfoByIDResponse) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
+
+	var list []PondInfo
+	for _, pond := range r.PondInfos {
+		list = append(list, PondInfo{
+			ID:           pond.ID,
+			Name:         pond.Name,
+			Capacity:     pond.Capacity,
+			Depth:        pond.Depth,
+			WaterQuality: pond.WaterQuality,
+			Species:      pond.Species,
+			Status:       pond.Status,
+		})
+	}
+
 	data := GetByIDFarmResponse{
 		ID:       r.ID,
 		Name:     r.Name,
 		Location: r.Location,
 		Owner:    r.Owner,
 		Area:     r.Area,
+		PondInfo: list,
 	}
+
 	res.Data = data
 	return res
 }

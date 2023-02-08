@@ -2,7 +2,18 @@ package pond
 
 // PondRequest struct is list parameter to store Ponds Information to Postgres
 type PondRequest struct {
-	PondID       uint
+	Name         string
+	Capacity     float64
+	Depth        float64
+	WaterQuality float64
+	Species      string
+	Status       int
+	FarmID       uint
+}
+
+// PondInfraInfo struct is list parameter from Ponds Storage
+type PondInfraInfo struct {
+	ID           uint
 	Name         string
 	Capacity     float64
 	Depth        float64
@@ -16,20 +27,4 @@ type PondRequest struct {
 type FarmPondsMapping struct {
 	FarmID  uint
 	PondsID uint
-}
-
-// PondStatus denotes the pond status
-type PondStatus int
-
-// The following constant are the know pond status
-const (
-	PondStatusDeleted  PondStatus = -1
-	PondStatusUnknown  PondStatus = 0
-	PondStatusActive   PondStatus = 1
-	PondStatusInactive PondStatus = 2
-)
-
-// Value convert Pondstatus into int
-func (status PondStatus) Value() int {
-	return int(status)
 }

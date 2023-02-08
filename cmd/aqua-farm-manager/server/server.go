@@ -184,7 +184,7 @@ func NewServer() (*Server, error) {
 
 	// Init Farm Domain
 	{
-		farmDom := farmdomain.NewFarmDomain(s.farmInfra)
+		farmDom := farmdomain.NewFarmDomain(s.farmInfra, s.pondInfra)
 		s.farmDomain = farmDom
 		log.Println("Init-NewFarmDomain")
 	}

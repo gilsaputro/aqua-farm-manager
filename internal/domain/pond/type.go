@@ -22,3 +22,14 @@ type PondDomainRequest struct {
 type PondResponse struct {
 	PondID uint
 }
+
+// PondInfo struct is list parameter response for pond domain
+type PondInfo struct {
+	ID           uint
+	Name         string
+	Capacity     float64
+	Depth        float64
+	WaterQuality float64
+	Species      string
+	Status       int
+}

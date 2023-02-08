@@ -1,6 +1,9 @@
 package farm
 
-import "errors"
+import (
+	"aqua-farm-manager/internal/domain/pond"
+	"errors"
+)
 
 // list Domain error
 var (
@@ -53,9 +56,11 @@ type UpdateDomainResponse struct {
 
 // GetFarmInfoByIDResponse struct is list parameter response for GetFarmInfoByID domain
 type GetFarmInfoByIDResponse struct {
-	ID       uint
-	Name     string
-	Location string
-	Owner    string
-	Area     string
+	ID        uint
+	Name      string
+	Location  string
+	Owner     string
+	Area      string
+	PondIDs   []uint
+	PondInfos []pond.PondInfo
 }
