@@ -18,6 +18,7 @@ type Config struct {
 	NSQ           NSQ      `yaml:"nsq"`
 	FarmHandler   Handler  `yaml:"farm_handler"`
 	StatHandler   Handler  `yaml:"stat_handler"`
+	PondHandler   Handler  `yaml:"pond_handler"`
 	TrackingEvent Consumer `yaml:"tracking_event"`
 }
 

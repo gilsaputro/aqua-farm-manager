@@ -30,13 +30,13 @@ func (f *Farm) CreateFarmInfo(r CreateDomainRequest) (CreateDomainResponse, erro
 	var err error
 	var res CreateDomainResponse
 
-	val, err := f.store.VerifyByName(r.Name)
+	exists, err := f.store.VerifyByName(r.Name)
 
 	if err != nil {
 		return res, err
 	}
 
-	if val {
+	if exists {
 		return res, ErrDuplicateFarm
 	}
 

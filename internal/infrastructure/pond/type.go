@@ -8,9 +8,8 @@ type PondRequest struct {
 	Depth        float64
 	WaterQuality float64
 	Species      string
-	Type         int
 	Status       int
-	FarmID       int
+	FarmID       uint
 }
 
 // FarmPondsMapping is list parameter to store Ponds Farms Mapping Information

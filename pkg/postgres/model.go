@@ -20,7 +20,6 @@ type Ponds struct {
 	Depth        float64
 	WaterQuality float64
 	Species      string
-	Type         int
 	Status       int
 }
 

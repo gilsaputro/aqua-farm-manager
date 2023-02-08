@@ -13,11 +13,14 @@ import (
 	"aqua-farm-manager/internal/app"
 	"aqua-farm-manager/internal/app/farm"
 	"aqua-farm-manager/internal/app/middleware"
+	"aqua-farm-manager/internal/app/pond"
 	"aqua-farm-manager/internal/app/stat"
 	"aqua-farm-manager/internal/app/trackingevent"
 	farmdomain "aqua-farm-manager/internal/domain/farm"
+	ponddomain "aqua-farm-manager/internal/domain/pond"
 	statdomain "aqua-farm-manager/internal/domain/stat"
 	farminfra "aqua-farm-manager/internal/infrastructure/farm"
+	pondinfra "aqua-farm-manager/internal/infrastructure/pond"
 	statinfra "aqua-farm-manager/internal/infrastructure/stat"
 	"aqua-farm-manager/pkg/elasticsearch"
 	"aqua-farm-manager/pkg/nsq"
@@ -44,6 +47,9 @@ type Server struct {
 	farmDomain  farmdomain.FarmDomain
 	farmInfra   farminfra.FarmStore
 	farmHandler farm.FarmHandler
+	pondDomain  ponddomain.PondDomain
+	pondInfra   pondinfra.PondStore
+	pondHandler pond.PondHandler
 	httpServer  *http.Server
 }
 
@@ -155,11 +161,17 @@ func NewServer() (*Server, error) {
 		s.statInfra = statinf
 		log.Println("Init-NewStatStore")
 	}
-	// Init Domain Infra
+	// Init Farm Infra
 	{
 		farmInf := farminfra.NewFarmStore(s.postgres)
 		s.farmInfra = farmInf
 		log.Println("Init-NewFarmStore")
+	}
+	// Init Pond Infra
+	{
+		pondInf := pondinfra.NewPondStore(s.postgres)
+		s.pondInfra = pondInf
+		log.Println("Init-NewPondStore")
 	}
 
 	// ======== Init Dependencies Domain ========
@@ -175,6 +187,13 @@ func NewServer() (*Server, error) {
 		farmDom := farmdomain.NewFarmDomain(s.farmInfra)
 		s.farmDomain = farmDom
 		log.Println("Init-NewFarmDomain")
+	}
+
+	// Init Farm Domain
+	{
+		pondDom := ponddomain.NewPondDomain(s.pondInfra, s.farmInfra)
+		s.pondDomain = pondDom
+		log.Println("Init-NewPondDomain")
 	}
 
 	// ======== Init Dependencies Handler/App ========
@@ -199,6 +218,16 @@ func NewServer() (*Server, error) {
 
 		log.Println("Init-FarmHandler")
 		s.farmHandler = *handler
+	}
+
+	// Init PondHandler
+	{
+		var opts []pond.Option
+		opts = append(opts, pond.WithTimeoutOptions(s.cfg.PondHandler.TimeoutInSec))
+		handler := pond.NewPondHandler(s.pondDomain, opts...)
+
+		log.Println("Init-FarmHandler")
+		s.pondHandler = *handler
 	}
 
 	// Init StatHandler
@@ -247,6 +276,10 @@ func NewServer() (*Server, error) {
 		// Init Farm Get By ID
 		getByIDPath := farmPath.String() + "/{id}"
 		r.HandleFunc(getByIDPath, s.middleware.Middleware(s.farmHandler.GetByIDFarmHandler)).Methods("GET")
+
+		// Init Pond Path
+		pondPath := app.Ponds
+		r.HandleFunc(pondPath.String(), s.middleware.Middleware(s.pondHandler.CreatePondHandler)).Methods("POST")
 
 		// Init Stat Path
 		statPath := app.Stat

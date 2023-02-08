@@ -1,6 +1,7 @@
 package pond
 
 import (
+	"aqua-farm-manager/internal/infrastructure/farm"
 	"aqua-farm-manager/internal/infrastructure/pond"
 )
 
@@ -11,23 +12,47 @@ type PondDomain interface {
 
 // Stat is list dependencies stat domain
 type Pond struct {
-	store pond.PondStore
+	pondstore pond.PondStore
+	farmstore farm.FarmStore
 }
 
-// NewStatDomain is func to generat StatDomain interface
-func NewStatDomain(store pond.PondStore) PondDomain {
+// NewPondDomain is func to generate PondDomain interface
+func NewPondDomain(pondstore pond.PondStore, farmstore farm.FarmStore) PondDomain {
 	return &Pond{
-		store: store,
+		pondstore: pondstore,
+		farmstore: farmstore,
 	}
 }
 
 func (p *Pond) CreatePondInfo(r PondDomainRequest) (PondResponse, error) {
 	var err error
 	var res PondResponse
+	var exists bool
+	exists, err = p.farmstore.VerifyByID(uint(r.FarmID))
+	if err != nil {
+		return res, err
+	}
+
+	if !exists {
+		return res, ErrInvalidFarm
+	}
+
+	exists, err = p.pondstore.VerifyByName(r.Name)
+
+	if exists {
+		return res, ErrDuplicatePond
+	}
+
+	if err != nil {
+		return res, err
+	}
+
+	if exists {
+		return res, ErrDuplicatePond
+	}
 
 	infrarequest := mapPondRequest(r)
-
-	pondID, err := p.store.Create(infrarequest)
+	pondID, err := p.pondstore.Create(infrarequest)
 	if err != nil {
 		return res, err
 	}
@@ -39,13 +64,11 @@ func (p *Pond) CreatePondInfo(r PondDomainRequest) (PondResponse, error) {
 
 func mapPondRequest(r PondDomainRequest) pond.PondRequest {
 	return pond.PondRequest{
-		PondID:       r.PondID,
 		Name:         r.Name,
 		Capacity:     r.Capacity,
 		Depth:        r.Depth,
 		WaterQuality: r.WaterQuality,
 		Species:      r.Species,
-		Type:         r.Type,
 		FarmID:       r.FarmID,
 	}
 }

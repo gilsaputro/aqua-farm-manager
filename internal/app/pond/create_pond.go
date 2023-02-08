@@ -20,7 +20,6 @@ type CreatePondRequest struct {
 	Depth        float64 `json:"depth"`
 	WaterQuality float64 `json:"water_quality"`
 	Species      string  `json:"species"`
-	Type         int     `json:"type"`
 	FarmID       uint    `json:"farm_id"`
 }
 
@@ -71,7 +70,7 @@ func (h *PondHandler) CreatePondHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// checking valid body
-	if len(body.Name) < 1 || body.FarmID < 1 {
+	if len(body.Name) < 1 || body.FarmID < 1 || (len(body.Species) < 1 && body.Capacity < 1 && body.Depth < 1 && body.WaterQuality < 1) {
 		code = http.StatusBadRequest
 		err = fmt.Errorf("Invalid Parameter Request")
 		return
@@ -80,7 +79,14 @@ func (h *PondHandler) CreatePondHandler(w http.ResponseWriter, r *http.Request) 
 	errChan := make(chan error, 1)
 	var res pond.PondResponse
 	go func(ctx context.Context) {
-		res, err = h.domain.CreatePondInfo(pond.PondDomainRequest{})
+		res, err = h.domain.CreatePondInfo(pond.PondDomainRequest{
+			Name:         body.Name,
+			Capacity:     body.Capacity,
+			Depth:        body.Depth,
+			WaterQuality: body.WaterQuality,
+			Species:      body.Species,
+			FarmID:       body.FarmID,
+		})
 		errChan <- err
 	}(ctx)
 
@@ -89,7 +95,11 @@ func (h *PondHandler) CreatePondHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case err = <-errChan:
 		if err != nil {
-			code = http.StatusInternalServerError
+			if err == pond.ErrDuplicatePond || err == pond.ErrInvalidFarm {
+				code = http.StatusBadRequest
+			} else {
+				code = http.StatusInternalServerError
+			}
 			return
 		}
 	}
