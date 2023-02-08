@@ -122,8 +122,8 @@ func (s *Stat) GetMetrics(r GetMetricsRequest) (MetricsInfo, error) {
 	}
 
 	return MetricsInfo{
-		NumRequest:   numUA,
-		NumUniqAgent: numReq,
+		NumRequest:   numReq,
+		NumUniqAgent: numUA,
 		NumSuccess:   numSuc,
 		NumError:     numErr,
 	}, nil

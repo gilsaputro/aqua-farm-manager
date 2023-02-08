@@ -2,6 +2,7 @@ package trackingevent
 
 import (
 	"aqua-farm-manager/internal/domain/stat"
+	"regexp"
 	"time"
 
 	"encoding/json"
@@ -71,8 +72,17 @@ func (c *TrackingEventConsumer) HandleMessage(msg *nsq.Message) error {
 		return nil
 	}
 
+	// Validate path contain ID
+	path := body.Path
+	// Should be change to apply global path
+	re := regexp.MustCompile(`^/(farms|ponds)/(\d+)$`)
+	split := re.FindStringSubmatch(path)
+	if len(split) > 1 {
+		path = "/" + split[1]
+	}
+
 	c.stat.IngestStatAPI(stat.IngestStatRequest{
-		Path:   body.Path,
+		Path:   path,
 		Method: body.Method,
 		Ua:     body.UA,
 		Code:   body.Code,

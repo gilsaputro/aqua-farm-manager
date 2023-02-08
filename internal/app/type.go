@@ -5,38 +5,30 @@ type UrlID int
 
 // list defined UrlID
 const (
-	Farms   UrlID = 1
-	FarmsID UrlID = 2
-	Ponds   UrlID = 3
-	PondsID UrlID = 4
-	Limit   UrlID = 5 // this will be flag to stop
-	Stat    UrlID = 6 // include stat api for getting metrics
+	Farms UrlID = 1
+	Ponds UrlID = 2
+	Limit UrlID = 3 // this will be flag to stop
+	Stat  UrlID = 4 // include stat api for getting metrics
 )
 
 // this list define all known of path setting
 var (
 	UrlIDName = map[UrlID]string{
-		Farms:   "/farms",
-		FarmsID: "/farms/{id}",
-		Ponds:   "/ponds",
-		PondsID: "/ponds/{id}",
-		Stat:    "/stat",
+		Farms: "/farms",
+		Ponds: "/ponds",
+		Stat:  "/stat",
 	}
 
 	UrlIDValue = map[string]UrlID{
-		UrlIDName[Farms]:   Farms,
-		UrlIDName[Ponds]:   Ponds,
-		UrlIDName[Stat]:    Stat,
-		UrlIDName[FarmsID]: FarmsID,
-		UrlIDName[PondsID]: PondsID,
+		UrlIDName[Farms]: Farms,
+		UrlIDName[Ponds]: Ponds,
+		UrlIDName[Stat]:  Stat,
 	}
 
 	UrlIDMethod = map[UrlID][]string{
-		Farms:   {"POST", "GET", "PUT", "DELETE"},
-		FarmsID: {"GET"},
-		Ponds:   {"POST", "GET", "PUT", "DELETE"},
-		PondsID: {"GET"},
-		Stat:    {"GET"},
+		Farms: {"POST", "GET", "PUT", "DELETE"},
+		Ponds: {"POST", "GET", "PUT", "DELETE"},
+		Stat:  {"GET"},
 	}
 )
 

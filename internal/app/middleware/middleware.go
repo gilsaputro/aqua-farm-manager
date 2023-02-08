@@ -45,7 +45,9 @@ func (m *Middleware) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		sw := &statusResponseWriter{ResponseWriter: w}
 
 		next.ServeHTTP(sw, r)
-		m.publishToTrackingEvent(path, method, ua, sw.statusCode)
+		go func() {
+			m.publishToTrackingEvent(path, method, ua, sw.statusCode)
+		}()
 	}
 }
 
