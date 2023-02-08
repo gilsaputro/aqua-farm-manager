@@ -1,6 +1,7 @@
 package stat
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,6 +10,8 @@ import (
 
 	"aqua-farm-manager/pkg/postgres"
 	"aqua-farm-manager/pkg/redis"
+
+	"github.com/jinzhu/gorm"
 )
 
 var (
@@ -138,11 +141,16 @@ func (s *Stat) BackupMetrics(r BackupMetricsRequest) error {
 		NumError:   r.Metrics.NumError,
 	}
 
-	val := s.pg.CheckStatExists(stat)
+	db := s.pg.GetDB()
+	if db == nil {
+		return errors.New("Database Client is not init")
+	}
+
+	val := checkStatExists(db, stat)
 	if val {
-		err = s.pg.UpdateStat(&stat)
+		err = updateStat(db, &stat)
 	} else {
-		err = s.pg.Insert(&stat)
+		err = insert(db, &stat)
 	}
 
 	return err
@@ -203,7 +211,12 @@ func (s *Stat) GetStatData(r GetStatDataRequest) (MetricsInfo, error) {
 	statMetrics := &postgres.StatMetrics{
 		Key: pathKey,
 	}
-	err = s.pg.GetStatRecodByKey(statMetrics)
+
+	db := s.pg.GetDB()
+	if db == nil {
+		return MetricsInfo{"0", "0", "0", "0"}, errors.New("Database Client is not init")
+	}
+	err = getStatRecodByKey(db, statMetrics)
 	if err != nil {
 		return MetricsInfo{"0", "0", "0", "0"}, err
 	}
@@ -234,4 +247,26 @@ func generateUAKeyMetrics(urlID string, method string, ua string) string {
 	key = strings.Replace(key, "<method>", method, -1)
 	key = strings.Replace(key, "<ua>", ua, -1)
 	return key
+}
+
+// checkStatExists is func to check if the data is stat exist
+func checkStatExists(db *gorm.DB, stat postgres.StatMetrics) bool {
+	var count = int64(0)
+	db.Model(stat).Where("key = ?", stat.Key).Count(&count).Limit(1)
+	return count > 0
+}
+
+// insert is func to insert data into table
+func insert(db *gorm.DB, stat *postgres.StatMetrics) error {
+	return db.Create(stat).Error
+}
+
+// getStatRecodByKey is func to get data into stat table using key
+func getStatRecodByKey(db *gorm.DB, stat *postgres.StatMetrics) error {
+	return db.Where("key = ?", stat.Key).First(stat).Error
+}
+
+// updateStat is func to update data into stat table
+func updateStat(db *gorm.DB, stat *postgres.StatMetrics) error {
+	return db.Model(stat).Where("key = ?", stat.Key).Update(postgres.StatMetrics{Request: stat.Request, UniqAgent: stat.UniqAgent}).Error
 }
