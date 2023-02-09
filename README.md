@@ -46,6 +46,15 @@ make deps-tear
 
 ### Running Binary:
 Once you have cloned the repository and set up the dependencies, you can run the binary using either of the following methods:
+
+you can download depedencies using
+
+```
+go mod vendor
+```
+
+And run using :
+
 ```
 go run ./cmd/aqua-farm-manager/main.go
 ```
