@@ -88,7 +88,7 @@ func (h *PondHandler) UpdatePondHandler(w http.ResponseWriter, r *http.Request) 
 		res, err = h.domain.UpdatePondInfo(pond.UpdateDomainRequest{
 			Name:         body.Name,
 			Capacity:     body.Capacity,
-			Depth:        body.Capacity,
+			Depth:        body.Depth,
 			WaterQuality: body.WaterQuality,
 			Species:      body.Species,
 			FarmID:       body.FarmID,

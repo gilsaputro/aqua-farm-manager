@@ -3,6 +3,7 @@ package pond
 import (
 	"aqua-farm-manager/internal/infrastructure/farm"
 	"aqua-farm-manager/internal/infrastructure/pond"
+	"fmt"
 )
 
 // PondDomain is list method for pond domain
@@ -133,6 +134,8 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 		if len(ponds) > 10 {
 			return res, ErrMaxPond
 		}
+		fmt.Println("pondInfra.WaterQuality", pondInfra.WaterQuality)
+		fmt.Println("pondInfra.Depth", pondInfra.Depth)
 		err = p.pondstore.Create(pondInfra)
 	} else {
 		pondInfra.ID = verify.ID
@@ -176,7 +179,7 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 		Name:         pondInfra.Name,
 		Capacity:     pondInfra.Capacity,
 		Depth:        pondInfra.Depth,
-		WaterQuality: pondInfra.Depth,
+		WaterQuality: pondInfra.WaterQuality,
 		Species:      pondInfra.Species,
 		FarmID:       pondInfra.FarmID,
 	}, err
