@@ -57,4 +57,8 @@ go build ./cmd/aqua-farm-manager/
 ./aqua-farm-manager
 ```
 
+### Postman Collection
+You can import postman Collention in : 
+./Aquafarm Management System.postman_collection.json
+
 Note: The details mentioned in these steps may vary depending on your configuration.

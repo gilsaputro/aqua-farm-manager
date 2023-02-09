@@ -22,7 +22,6 @@ import (
 	farminfra "aqua-farm-manager/internal/infrastructure/farm"
 	pondinfra "aqua-farm-manager/internal/infrastructure/pond"
 	statinfra "aqua-farm-manager/internal/infrastructure/stat"
-	"aqua-farm-manager/pkg/elasticsearch"
 	"aqua-farm-manager/pkg/nsq"
 	"aqua-farm-manager/pkg/postgres"
 	"aqua-farm-manager/pkg/redis"
@@ -39,7 +38,6 @@ type Server struct {
 	redis       redis.RedisMethod
 	postgres    postgres.PostgresMethod
 	nsqProducer nsq.NsqMethod
-	es          elasticsearch.ElasticSearchMethod
 	middleware  middleware.Middleware
 	statDomain  statdomain.StatDomain
 	statInfra   statinfra.StatStore
@@ -141,17 +139,6 @@ func NewServer() (*Server, error) {
 		}
 		s.nsqProducer = nsqProducer
 		log.Println("Init-NSQ Producer")
-	}
-
-	// Init ElasticSearch
-	{
-		esMethod, err := elasticsearch.CreateESClient(s.cfg.ES.Host)
-		if err != nil {
-			fmt.Print("[Got Error]-Postgres :", err)
-		}
-
-		s.es = esMethod
-		log.Println("Init-ElasticSearch")
 	}
 
 	// ======== Init Dependencies Infra ========
