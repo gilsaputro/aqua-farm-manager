@@ -274,14 +274,19 @@ func NewServer() (*Server, error) {
 		r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.DeleteFarmHandler)).Methods("DELETE")
 
 		// Init Farm Get By ID
-		getByIDPath := farmPath.String() + "/{id}"
-		r.HandleFunc(getByIDPath, s.middleware.Middleware(s.farmHandler.GetByIDFarmHandler)).Methods("GET")
+		getFarmByIDPath := farmPath.String() + "/{id}"
+		r.HandleFunc(getFarmByIDPath, s.middleware.Middleware(s.farmHandler.GetByIDFarmHandler)).Methods("GET")
 
 		// Init Pond Path
 		pondPath := app.Ponds
 		r.HandleFunc(pondPath.String(), s.middleware.Middleware(s.pondHandler.CreatePondHandler)).Methods("POST")
 		r.HandleFunc(pondPath.String(), s.middleware.Middleware(s.pondHandler.UpdatePondHandler)).Methods("PUT")
 		r.HandleFunc(pondPath.String(), s.middleware.Middleware(s.pondHandler.DeletePondHandler)).Methods("Delete")
+		r.HandleFunc(pondPath.String(), s.middleware.Middleware(s.pondHandler.GetPondHandler)).Methods("Get")
+
+		// Init Pond Get By ID
+		getPondByIDPath := pondPath.String() + "/{id}"
+		r.HandleFunc(getPondByIDPath, s.middleware.Middleware(s.pondHandler.GetByIDPondHandler)).Methods("GET")
 
 		// Init Stat Path
 		statPath := app.Stat

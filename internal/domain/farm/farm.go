@@ -11,8 +11,8 @@ type FarmDomain interface {
 	CreateFarmInfo(r CreateDomainRequest) (CreateDomainResponse, error)
 	DeleteFarmInfo(r DeleteDomainRequest) (DeleteDomainResponse, error)
 	UpdateFarmInfo(r UpdateDomainRequest) (UpdateDomainResponse, error)
-	GetFarmInfoByID(ID uint) (GetFarmInfoByIDResponse, error)
-	GetFarm(size, cursor int) ([]GetFarmInfoByIDResponse, int, error)
+	GetFarmInfoByID(ID uint) (GetFarmInfoResponse, error)
+	GetFarm(size, cursor int) ([]GetFarmInfoResponse, int, error)
 }
 
 // Stat is list dependencies stat domain
@@ -161,7 +161,7 @@ func (f *Farm) UpdateFarmInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 }
 
 // GetFarmInfoByID is func to get farm info by id
-func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoByIDResponse, error) {
+func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoResponse, error) {
 	var err error
 
 	farm := &farm.FarmInfraInfo{
@@ -170,12 +170,12 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoByIDResponse, error) {
 
 	err = f.farmstore.GetFarmByID(farm)
 	if err != nil {
-		return GetFarmInfoByIDResponse{}, err
+		return GetFarmInfoResponse{}, err
 	}
 
 	ids, err := f.pondstore.GetPondIDbyFarmID(farm.ID)
 	if err != nil {
-		return GetFarmInfoByIDResponse{}, err
+		return GetFarmInfoResponse{}, err
 	}
 	var listPond []pondDomain.PondInfo
 	for _, id := range ids {
@@ -195,7 +195,7 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoByIDResponse, error) {
 			Species:      pond.Species,
 		})
 	}
-	return GetFarmInfoByIDResponse{
+	return GetFarmInfoResponse{
 		ID:        farm.ID,
 		Name:      farm.Name,
 		Location:  farm.Location,
@@ -206,9 +206,9 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoByIDResponse, error) {
 }
 
 // GetFarm is func to get farm info by id
-func (f *Farm) GetFarm(size, cursor int) ([]GetFarmInfoByIDResponse, int, error) {
+func (f *Farm) GetFarm(size, cursor int) ([]GetFarmInfoResponse, int, error) {
 	var err error
-	var list []GetFarmInfoByIDResponse
+	var list []GetFarmInfoResponse
 	farms, err := f.farmstore.GetFarmWithPaging(
 		farm.GetFarmWithPagingRequest{
 			Size:   size,
@@ -224,7 +224,7 @@ func (f *Farm) GetFarm(size, cursor int) ([]GetFarmInfoByIDResponse, int, error)
 		if err != nil {
 			continue
 		}
-		info := GetFarmInfoByIDResponse{
+		info := GetFarmInfoResponse{
 			ID:       farm.ID,
 			Name:     farm.Name,
 			Location: farm.Location,

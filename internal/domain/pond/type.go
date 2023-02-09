@@ -66,3 +66,14 @@ type DeleteDomainResponse struct {
 	Name string
 	ID   uint
 }
+
+// GetPondInfoResponse struct is list parameter response for GetPondInfo domain
+type GetPondInfoResponse struct {
+	ID           uint
+	Name         string
+	Capacity     float64
+	Depth        float64
+	WaterQuality float64
+	Species      string
+	FarmID       uint
+}

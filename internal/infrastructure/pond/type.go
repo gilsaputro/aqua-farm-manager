@@ -16,3 +16,9 @@ type FarmPondsMapping struct {
 	FarmID  uint
 	PondsID uint
 }
+
+//GetPondWithPagingRequest struct is list parameter to get all pond with page
+type GetPondWithPagingRequest struct {
+	Size   int
+	Cursor int
+}

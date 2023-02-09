@@ -1,4 +1,4 @@
-package farm
+package pond
 
 import (
 	"context"
@@ -10,34 +10,25 @@ import (
 	"strings"
 	"time"
 
-	"aqua-farm-manager/internal/domain/farm"
+	"aqua-farm-manager/internal/domain/pond"
 	utilhttp "aqua-farm-manager/pkg/utilhttp"
 
 	"github.com/gorilla/mux"
 )
 
-// FFarmResponse is list response parameter for GetByID Api
-type GetByIDFarmResponse struct {
-	ID       uint       `json:"id"`
-	Name     string     `json:"name"`
-	Location string     `json:"location"`
-	Owner    string     `json:"owner"`
-	Area     string     `json:"area"`
-	PondInfo []PondInfo `json:"pond_info"`
-}
-
-type PondInfo struct {
+// GetByIDPondResponse is list response parameter for GetByID Api
+type GetByIDPondResponse struct {
 	ID           uint    `json:"id"`
 	Name         string  `json:"name"`
 	Capacity     float64 `json:"capacity"`
 	Depth        float64 `json:"depth"`
 	WaterQuality float64 `json:"water_quality"`
 	Species      string  `json:"species"`
-	Status       int     `json:"status"`
+	FarmID       uint    `json:"farm_id"`
 }
 
-// GetByIDFarmHandler is func handler for create Farm data
-func (h *FarmHandler) GetByIDFarmHandler(w http.ResponseWriter, r *http.Request) {
+// GetByIDPondHandler is func handler for create Pond data
+func (h *PondHandler) GetByIDPondHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(h.timeoutInSec)*time.Second)
 	defer cancel()
 
@@ -55,7 +46,7 @@ func (h *FarmHandler) GetByIDFarmHandler(w http.ResponseWriter, r *http.Request)
 
 		data, errMarshal := json.Marshal(response)
 		if errMarshal != nil {
-			log.Println("[GetByIDFarmHandler]-Error Marshal Response :", err)
+			log.Println("[GetByIDPondHandler]-Error Marshal Response :", err)
 			code = http.StatusInternalServerError
 			data = []byte(`{"code":500,"message":"Internal Server Error"}`)
 		}
@@ -72,9 +63,9 @@ func (h *FarmHandler) GetByIDFarmHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	errChan := make(chan error, 1)
-	var res farm.GetFarmInfoResponse
+	var res pond.GetPondInfoResponse
 	go func(ctx context.Context) {
-		res, err = h.domain.GetFarmInfoByID(uint(id))
+		res, err = h.domain.GetPondInfoByID(uint(id))
 		errChan <- err
 	}(ctx)
 
@@ -95,28 +86,17 @@ func (h *FarmHandler) GetByIDFarmHandler(w http.ResponseWriter, r *http.Request)
 	response = mapResonseGetByID(res)
 }
 
-func mapResonseGetByID(r farm.GetFarmInfoResponse) utilhttp.StandardResponse {
+func mapResonseGetByID(r pond.GetPondInfoResponse) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
 
-	var list []PondInfo
-	for _, pond := range r.PondInfos {
-		list = append(list, PondInfo{
-			ID:           pond.ID,
-			Name:         pond.Name,
-			Capacity:     pond.Capacity,
-			Depth:        pond.Depth,
-			WaterQuality: pond.WaterQuality,
-			Species:      pond.Species,
-		})
-	}
-
-	data := GetByIDFarmResponse{
-		ID:       r.ID,
-		Name:     r.Name,
-		Location: r.Location,
-		Owner:    r.Owner,
-		Area:     r.Area,
-		PondInfo: list,
+	data := GetByIDPondResponse{
+		ID:           r.ID,
+		Name:         r.Name,
+		Capacity:     r.Capacity,
+		Depth:        r.Depth,
+		WaterQuality: r.WaterQuality,
+		Species:      r.Species,
+		FarmID:       r.FarmID,
 	}
 
 	res.Data = data

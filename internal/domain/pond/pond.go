@@ -10,6 +10,8 @@ type PondDomain interface {
 	CreatePondInfo(r CreateDomainRequest) (CreateDomainResponse, error)
 	UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, error)
 	DeletePondInfo(r DeleteDomainRequest) (DeleteDomainResponse, error)
+	GetPondInfoByID(ID uint) (GetPondInfoResponse, error)
+	GetAllPond(size, cursor int) ([]GetPondInfoResponse, int, error)
 }
 
 // Stat is list dependencies stat domain
@@ -204,4 +206,65 @@ func (p *Pond) DeletePondInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 	res.Name = verify.Name
 
 	return res, err
+}
+
+// GetPondInfoByID is func to get farm info by id
+func (p *Pond) GetPondInfoByID(ID uint) (GetPondInfoResponse, error) {
+	var err error
+
+	pond := &pond.PondInfraInfo{
+		ID: ID,
+	}
+
+	err = p.pondstore.GetPondByID(pond)
+
+	if err != nil {
+		return GetPondInfoResponse{}, err
+	}
+
+	return GetPondInfoResponse{
+		ID:           pond.ID,
+		Name:         pond.Name,
+		Capacity:     pond.Capacity,
+		Depth:        pond.Depth,
+		WaterQuality: pond.WaterQuality,
+		Species:      pond.Species,
+		FarmID:       pond.FarmID,
+	}, err
+}
+
+// GetAllPond is func to get farm info by id
+func (p *Pond) GetAllPond(size, cursor int) ([]GetPondInfoResponse, int, error) {
+	var err error
+	var list []GetPondInfoResponse
+	ponds, err := p.pondstore.GetPondWithPaging(
+		pond.GetPondWithPagingRequest{
+			Size:   size,
+			Cursor: cursor,
+		})
+
+	if err != nil {
+		return list, 0, err
+	}
+
+	for _, pond := range ponds {
+		info := GetPondInfoResponse{
+			ID:           pond.ID,
+			Name:         pond.Name,
+			Capacity:     pond.Capacity,
+			Depth:        pond.Depth,
+			WaterQuality: pond.WaterQuality,
+			Species:      pond.Species,
+			FarmID:       pond.FarmID,
+		}
+
+		list = append(list, info)
+	}
+
+	nextPage := cursor + 1
+	if len(ponds) < size {
+		nextPage = 0
+	}
+
+	return list, nextPage, err
 }

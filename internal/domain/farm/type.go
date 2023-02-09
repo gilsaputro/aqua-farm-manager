@@ -54,8 +54,8 @@ type UpdateDomainResponse struct {
 	Area     string
 }
 
-// GetFarmInfoByIDResponse struct is list parameter response for GetFarmInfoByID domain
-type GetFarmInfoByIDResponse struct {
+// GetFarmInfoResponse struct is list parameter response for GetFarmInfoByID domain
+type GetFarmInfoResponse struct {
 	ID        uint
 	Name      string
 	Location  string

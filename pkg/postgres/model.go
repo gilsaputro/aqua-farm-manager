@@ -27,7 +27,7 @@ type Ponds struct {
 type FarmPondsMapping struct {
 	gorm.Model
 	FarmID  uint
-	PondsID uint
+	PondsID uint `gorm:"uniqueIndex"`
 }
 
 // StatMetrics struct to store StatMetrics information

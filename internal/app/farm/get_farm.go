@@ -86,7 +86,7 @@ func (h *FarmHandler) GetFarmHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	errChan := make(chan error, 1)
-	var res []farm.GetFarmInfoByIDResponse
+	var res []farm.GetFarmInfoResponse
 	var next int
 	go func(ctx context.Context) {
 		res, next, err = h.domain.GetFarm(body.Size, body.Cursor)
@@ -116,7 +116,7 @@ func (h *FarmHandler) GetFarmHandler(w http.ResponseWriter, r *http.Request) {
 	response = mapResonseGet(res, next)
 }
 
-func mapResonseGet(farms []farm.GetFarmInfoByIDResponse, next int) utilhttp.StandardResponse {
+func mapResonseGet(farms []farm.GetFarmInfoResponse, next int) utilhttp.StandardResponse {
 	var list []FarmInfo
 
 	for _, farm := range farms {

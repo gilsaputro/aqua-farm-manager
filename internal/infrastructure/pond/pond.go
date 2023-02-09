@@ -17,6 +17,7 @@ type PondStore interface {
 	Create(r *PondInfraInfo) error
 	Update(r *PondInfraInfo) error
 	Delete(r *PondInfraInfo) error
+	GetPondWithPaging(r GetPondWithPagingRequest) ([]PondInfraInfo, error)
 }
 
 // Pond is list dependencies pond store
@@ -112,12 +113,22 @@ func (p *Pond) GetPondByID(r *PondInfraInfo) error {
 
 	err = getPondByID(db, pond)
 
+	if err != nil {
+		return err
+	}
+
+	mapping := &postgres.FarmPondsMapping{
+		PondsID: pond.ID,
+	}
+	err = getFarmIDbyPondID(db, mapping)
+
 	r.ID = pond.Model.ID
 	r.Name = pond.Name
 	r.Capacity = pond.Capacity
 	r.Depth = pond.Depth
 	r.WaterQuality = pond.WaterQuality
 	r.Species = pond.Species
+	r.FarmID = mapping.FarmID
 	return err
 }
 
@@ -140,12 +151,22 @@ func (p *Pond) GetPondByName(r *PondInfraInfo) error {
 
 	err = getPondByName(db, pond)
 
+	if err != nil {
+		return err
+	}
+
+	mapping := &postgres.FarmPondsMapping{
+		PondsID: pond.ID,
+	}
+	err = getFarmIDbyPondID(db, mapping)
+
 	r.ID = pond.Model.ID
 	r.Name = pond.Name
 	r.Capacity = pond.Capacity
 	r.Depth = pond.Depth
 	r.WaterQuality = pond.WaterQuality
 	r.Species = pond.Species
+	r.FarmID = mapping.FarmID
 	return err
 }
 
@@ -178,12 +199,27 @@ func (f *Pond) Update(r *PondInfraInfo) error {
 		return err
 	}
 
+	farmpondMapping := &postgres.FarmPondsMapping{
+		FarmID:  r.FarmID,
+		PondsID: pond.ID,
+	}
+
+	err = updateMapping(db, farmpondMapping)
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
 // update is func to update data pond in database
 func update(db *gorm.DB, pond *postgres.Ponds) error {
 	return db.Model(pond).Where("name = ? AND id = ? and status = ?", pond.Name, pond.Model.ID, model.Active.Value()).Updates(pond).Error
+}
+
+// updateMapping is func to update mapping data pond farm in database
+func updateMapping(db *gorm.DB, mapping *postgres.FarmPondsMapping) error {
+	return db.Model(mapping).Where("ponds_id = ?", mapping.PondsID).Updates(postgres.FarmPondsMapping{FarmID: mapping.FarmID}).Error
 }
 
 // Delete is func to soft delete farm into database
@@ -253,4 +289,40 @@ func getPondbyName(db *gorm.DB, pond *postgres.Ponds) error {
 // getPondbyID func to get pond by id
 func getPondbyID(db *gorm.DB, pond *postgres.Ponds) error {
 	return db.Where("id = ? AND Status = ?", pond.Model.ID, model.Active.Value()).First(&pond).Error
+}
+
+// GetPondWithPaging is func to get all pond with paging
+func (p *Pond) GetPondWithPaging(r GetPondWithPagingRequest) ([]PondInfraInfo, error) {
+	var list []PondInfraInfo
+	var err error
+
+	db := p.pg.GetDB()
+	if db == nil {
+		return list, errors.New("Database Client is not init")
+	}
+	ponds, err := getPondWithPaging(db, r.Cursor, r.Size)
+
+	return ponds, err
+}
+
+func getPondWithPaging(db *gorm.DB, cursor int, size int) ([]PondInfraInfo, error) {
+	var ponds []PondInfraInfo
+	err := db.Table("ponds").
+		Select("ponds.id, ponds.name, ponds.capacity, ponds.depth, ponds.water_quality, ponds.species, farm_ponds_mappings.farm_id").
+		Joins("left join farm_ponds_mappings on farm_ponds_mappings.ponds_id = ponds.id").
+		Where("status = ?", model.Active.Value()).
+		Limit(size).
+		Offset((cursor - 1) * size).
+		Scan(&ponds).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ponds, nil
+}
+
+// getFarmIDbyPondID func to get farmid by pondid id
+func getFarmIDbyPondID(db *gorm.DB, mapping *postgres.FarmPondsMapping) error {
+	return db.Where("ponds_id = ?", mapping.PondsID).First(&mapping).Error
 }
