@@ -34,7 +34,9 @@ func (f *Farm) CreateFarmInfo(r CreateDomainRequest) (CreateDomainResponse, erro
 	var err error
 	var res CreateDomainResponse
 
-	exists, err := f.farmstore.VerifyByName(r.Name)
+	exists, err := f.farmstore.Verify(&farm.FarmInfraInfo{
+		Name: r.Name,
+	})
 
 	if err != nil {
 		return res, err
@@ -70,30 +72,20 @@ func (f *Farm) DeleteFarmInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 	var err error
 	var res DeleteDomainResponse
 	var exists bool
+
+	verify := farm.FarmInfraInfo{}
 	if r.ID != 0 && len(r.Name) > 0 {
-		exists, err = f.farmstore.Verify(&farm.FarmInfraInfo{
-			ID:   r.ID,
-			Name: r.Name,
-		})
+		verify.ID = r.ID
+		verify.Name = r.Name
 	} else if r.ID != 0 {
-		var name string
-		exists, err = f.farmstore.VerifyByID(r.ID)
-		if err != nil {
-			return res, err
-		}
-		name, err = f.farmstore.GetFarmNameByID(r.ID)
-		r.Name = name
+		verify.ID = r.ID
 	} else if len(r.Name) != 0 {
-		var id uint
-		exists, err = f.farmstore.VerifyByName(r.Name)
-		if err != nil {
-			return res, err
-		}
-		id, err = f.farmstore.GetFarmIDByName(r.Name)
-		r.ID = id
+		verify.Name = r.Name
 	} else {
 		return res, ErrInvalidFarm
 	}
+
+	exists, err = f.farmstore.Verify(&verify)
 
 	if err != nil {
 		return res, err
@@ -102,15 +94,17 @@ func (f *Farm) DeleteFarmInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 	if !exists {
 		return res, ErrInvalidFarm
 	}
-	res.ID = r.ID
-	res.Name = r.Name
+
 	err = f.farmstore.Delete(&farm.FarmInfraInfo{
-		ID:   r.ID,
-		Name: r.Name,
+		ID:   verify.ID,
+		Name: verify.Name,
 	})
 	if err != nil {
 		return res, err
 	}
+
+	res.ID = verify.ID
+	res.Name = verify.Name
 
 	return res, err
 }
@@ -121,7 +115,9 @@ func (f *Farm) UpdateFarmInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 	var res UpdateDomainResponse
 	var exists bool
 
-	exists, err = f.farmstore.VerifyByName(r.Name)
+	exists, err = f.farmstore.Verify(&farm.FarmInfraInfo{
+		Name: r.Name,
+	})
 	if err != nil {
 		return res, err
 	}
@@ -189,7 +185,7 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoByIDResponse, error) {
 		pond := &pond.PondInfraInfo{
 			ID: id,
 		}
-		err := f.pondstore.GetPondInfoByID(pond)
+		err := f.pondstore.GetPondByID(pond)
 		if err != nil {
 			continue
 		}
@@ -200,7 +196,6 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoByIDResponse, error) {
 			Depth:        pond.Depth,
 			WaterQuality: pond.WaterQuality,
 			Species:      pond.Species,
-			Status:       pond.Status,
 		})
 	}
 	return GetFarmInfoByIDResponse{

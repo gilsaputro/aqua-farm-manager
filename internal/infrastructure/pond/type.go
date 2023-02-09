@@ -1,16 +1,5 @@
 package pond
 
-// PondRequest struct is list parameter to store Ponds Information to Postgres
-type PondRequest struct {
-	Name         string
-	Capacity     float64
-	Depth        float64
-	WaterQuality float64
-	Species      string
-	Status       int
-	FarmID       uint
-}
-
 // PondInfraInfo struct is list parameter from Ponds Storage
 type PondInfraInfo struct {
 	ID           uint
@@ -19,7 +8,6 @@ type PondInfraInfo struct {
 	Depth        float64
 	WaterQuality float64
 	Species      string
-	Status       int
 	FarmID       uint
 }
 

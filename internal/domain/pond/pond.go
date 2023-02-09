@@ -7,7 +7,8 @@ import (
 
 // PondDomain is list method for pond domain
 type PondDomain interface {
-	CreatePondInfo(r PondDomainRequest) (PondResponse, error)
+	CreatePondInfo(r CreateDomainRequest) (CreateDomainResponse, error)
+	UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, error)
 }
 
 // Stat is list dependencies stat domain
@@ -24,11 +25,15 @@ func NewPondDomain(pondstore pond.PondStore, farmstore farm.FarmStore) PondDomai
 	}
 }
 
-func (p *Pond) CreatePondInfo(r PondDomainRequest) (PondResponse, error) {
+// CreatePondInfo is func to update farm info in database
+func (p *Pond) CreatePondInfo(r CreateDomainRequest) (CreateDomainResponse, error) {
 	var err error
-	var res PondResponse
+	var res CreateDomainResponse
 	var exists bool
-	exists, err = p.farmstore.VerifyByID(uint(r.FarmID))
+	exists, err = p.farmstore.Verify(
+		&farm.FarmInfraInfo{
+			ID: r.FarmID,
+		})
 	if err != nil {
 		return res, err
 	}
@@ -37,7 +42,10 @@ func (p *Pond) CreatePondInfo(r PondDomainRequest) (PondResponse, error) {
 		return res, ErrInvalidFarm
 	}
 
-	exists, err = p.pondstore.VerifyByName(r.Name)
+	exists, err = p.pondstore.Verify(
+		&pond.PondInfraInfo{
+			Name: r.Name,
+		})
 
 	if exists {
 		return res, ErrDuplicatePond
@@ -51,19 +59,19 @@ func (p *Pond) CreatePondInfo(r PondDomainRequest) (PondResponse, error) {
 		return res, ErrDuplicatePond
 	}
 
-	infrarequest := mapPondRequest(r)
-	pondID, err := p.pondstore.Create(infrarequest)
+	pondinfo := mapPondRequest(r)
+	err = p.pondstore.Create(pondinfo)
 	if err != nil {
 		return res, err
 	}
 
-	res.PondID = pondID
+	res.PondID = pondinfo.ID
 
 	return res, err
 }
 
-func mapPondRequest(r PondDomainRequest) pond.PondRequest {
-	return pond.PondRequest{
+func mapPondRequest(r CreateDomainRequest) *pond.PondInfraInfo {
+	return &pond.PondInfraInfo{
 		Name:         r.Name,
 		Capacity:     r.Capacity,
 		Depth:        r.Depth,
@@ -71,4 +79,127 @@ func mapPondRequest(r PondDomainRequest) pond.PondRequest {
 		Species:      r.Species,
 		FarmID:       r.FarmID,
 	}
+}
+
+// UpdatePondInfo is func to update pond info in database
+func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, error) {
+	var err error
+	var res UpdateDomainResponse
+	var exists bool
+
+	verify := &pond.PondInfraInfo{
+		Name: r.Name,
+	}
+	exists, err = p.pondstore.Verify(verify)
+
+	if err != nil {
+		return res, err
+	}
+
+	req := &pond.PondInfraInfo{
+		Name:         r.Name,
+		Capacity:     r.Capacity,
+		Depth:        r.Depth,
+		WaterQuality: r.WaterQuality,
+		Species:      r.Species,
+		FarmID:       r.FarmID,
+	}
+
+	// verify farm id
+	exists, err = p.farmstore.Verify(
+		&farm.FarmInfraInfo{
+			ID: r.FarmID,
+		})
+	if err != nil {
+		return res, err
+	}
+	// reject if the farmid is not exists
+	if !exists {
+		return res, ErrInvalidFarm
+	}
+
+	if !exists {
+		err = p.pondstore.Create(req)
+	} else {
+		req.ID = verify.ID
+		err = p.pondstore.GetPondByID(req)
+		if err != nil {
+			return res, err
+		}
+
+		// validate nil request
+		if r.Species != "" {
+			req.Species = r.Species
+		}
+		if r.Capacity < 0 {
+			req.Capacity = r.Capacity
+		}
+		if r.Depth < 0 {
+			req.Depth = r.Depth
+		}
+		if r.WaterQuality < 0 {
+			req.WaterQuality = r.WaterQuality
+		}
+		if r.FarmID < 0 {
+			req.FarmID = r.FarmID
+		}
+
+		err = p.pondstore.Update(req)
+	}
+
+	if err != nil {
+		return res, err
+	}
+
+	return UpdateDomainResponse{
+		ID:           req.ID,
+		Name:         req.Name,
+		Capacity:     req.Capacity,
+		Depth:        req.Depth,
+		WaterQuality: req.Depth,
+		Species:      req.Species,
+		FarmID:       req.FarmID,
+	}, err
+}
+
+// DeletePondInfo is func to soft delete pond info in database
+func (p *Pond) DeletePondInfo(r DeleteDomainRequest) (DeleteDomainResponse, error) {
+	var err error
+	var res DeleteDomainResponse
+	var exists bool
+
+	verify := pond.PondInfraInfo{}
+
+	if r.ID != 0 && len(r.Name) > 0 {
+		verify.ID = r.ID
+		verify.Name = r.Name
+	} else if r.ID != 0 {
+		verify.ID = r.ID
+	} else if len(r.Name) != 0 {
+		verify.Name = r.Name
+	} else {
+		return res, ErrInvalidPond
+	}
+
+	exists, err = p.pondstore.Verify(&verify)
+
+	if err != nil {
+		return res, err
+	}
+
+	if !exists {
+		return res, ErrInvalidFarm
+	}
+
+	res.ID = r.ID
+	res.Name = r.Name
+	err = p.farmstore.Delete(&farm.FarmInfraInfo{
+		ID:   r.ID,
+		Name: r.Name,
+	})
+	if err != nil {
+		return res, err
+	}
+
+	return res, err
 }

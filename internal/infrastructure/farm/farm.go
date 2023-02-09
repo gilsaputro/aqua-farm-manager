@@ -10,11 +10,7 @@ import (
 
 // FarmStore is set of methods for interacting with a farm storage system
 type FarmStore interface {
-	VerifyByName(name string) (bool, error)
-	VerifyByID(Id uint) (bool, error)
 	Verify(r *FarmInfraInfo) (bool, error)
-	GetFarmNameByID(id uint) (string, error)
-	GetFarmIDByName(name string) (uint, error)
 	Create(r *FarmInfraInfo) error
 	Delete(r *FarmInfraInfo) error
 	Update(r *FarmInfraInfo) error
@@ -61,7 +57,7 @@ func (f *Farm) Create(r *FarmInfraInfo) error {
 	return err
 }
 
-// Create is func to store farm into database
+// Update is func to store farm into database
 func (f *Farm) Update(r *FarmInfraInfo) error {
 	var err error
 	db := f.pg.GetDB()
@@ -159,102 +155,45 @@ func (f *Farm) GetFarmByID(r *FarmInfraInfo) error {
 	return err
 }
 
-// VerifyByName is func to check if farm already exists by name
-func (f *Farm) VerifyByName(name string) (bool, error) {
-	var err error
-	db := f.pg.GetDB()
-	if db == nil {
-		return false, errors.New("Database Client is not init")
-	}
-
-	farm := &postgres.Farms{
-		Name: name,
-	}
-
-	return checkFarmExistsByName(db, farm), err
-}
-
-// VerifyByName is func to check if farm already exists by id
-func (f *Farm) VerifyByID(Id uint) (bool, error) {
-	var err error
-	db := f.pg.GetDB()
-	if db == nil {
-		return false, errors.New("Database Client is not init")
-	}
-
-	farm := &postgres.Farms{
-		Model: gorm.Model{
-			ID: Id,
-		},
-	}
-
-	return checkFarmExistsByID(db, farm), err
-}
-
 // Verify is func to check if farm already exists based on id and name
 func (f *Farm) Verify(r *FarmInfraInfo) (bool, error) {
-	var err error
+	var exists bool
 	db := f.pg.GetDB()
 	if db == nil {
 		return false, errors.New("Database Client is not init")
 	}
 
-	farm := &postgres.Farms{
-		Model: gorm.Model{
-			ID: r.ID,
-		},
-		Name: r.Name,
+	farm := &postgres.Farms{}
+
+	if r.ID > 0 {
+		farm.Model.ID = r.ID
+		getFarmbyID(db, farm)
+	} else if len(r.Name) > 0 {
+		farm.Name = r.Name
+		getFarmbyName(db, farm)
+	} else {
+		return exists, errors.New("ID or Name is required")
 	}
 
-	return checkFarmExists(db, farm), err
+	if len(farm.Name) == 0 || farm.ID <= 0 {
+		return exists, nil
+	}
+
+	exists = true
+	r.Name = farm.Name
+	r.ID = farm.Model.ID
+
+	return exists, nil
 }
 
-// GetFarmIDByName is func to get FarmID by name
-func (f *Farm) GetFarmIDByName(name string) (uint, error) {
-	var err error
-
-	db := f.pg.GetDB()
-	if db == nil {
-		return 0, errors.New("Database Client is not init")
-	}
-
-	farm := &postgres.Farms{
-		Name: name,
-	}
-
-	err = getFarmbyName(db, farm)
-
-	return farm.Model.ID, err
-}
-
-// getFarmIDbyName func to get farm id by name
+// getFarmbyName func to get farm by name
 func getFarmbyName(db *gorm.DB, farm *postgres.Farms) error {
 	return db.Where("name = ? AND Status = ?", farm.Name, model.Active.Value()).First(&farm).Error
 }
 
-// GetFarmIDByName is func to get FarmName by id
-func (f *Farm) GetFarmNameByID(id uint) (string, error) {
-	var err error
-
-	db := f.pg.GetDB()
-	if db == nil {
-		return "", errors.New("Database Client is not init")
-	}
-
-	farm := &postgres.Farms{
-		Model: gorm.Model{
-			ID: id,
-		},
-	}
-
-	err = getFarmbyID(db, farm)
-
-	return farm.Name, err
-}
-
-// getFarmNamebyID func to get farm name by id
+// getFarmbyID func to get farm by id
 func getFarmbyID(db *gorm.DB, farm *postgres.Farms) error {
-	return db.Where("id = ? and status = ?", farm.Model.ID, model.Active.Value()).First(&farm).Error
+	return db.Where("id = ? AND Status = ?", farm.Model.ID, model.Active.Value()).First(&farm).Error
 }
 
 // insert is func to insert data farm into database
@@ -270,20 +209,6 @@ func update(db *gorm.DB, farm *postgres.Farms) error {
 // delete is func to soft delete data farm into database with update the status to inactive
 func delete(db *gorm.DB, farm *postgres.Farms) error {
 	return db.Model(farm).Where("name = ? AND id = ? and status = ?", farm.Name, farm.Model.ID, model.Active.Value()).Update("status", model.Inactive.Value()).Error
-}
-
-// checkFarmExistsByName is func to check if the data is exist by name
-func checkFarmExistsByName(db *gorm.DB, farm *postgres.Farms) bool {
-	var count = int64(0)
-	db.Model(farm).Where("name = ? AND status = 1", farm.Name).Count(&count).Limit(1)
-	return count > 0
-}
-
-// checkFarmExistsByID is func to check if the data is exist by id
-func checkFarmExistsByID(db *gorm.DB, farm *postgres.Farms) bool {
-	var count = int64(0)
-	db.Model(farm).Where("id = ? AND status = 1", farm.Model.ID).Count(&count).Limit(1)
-	return count > 0
 }
 
 // checkFarmExists is func to check if the data is exist by id and name

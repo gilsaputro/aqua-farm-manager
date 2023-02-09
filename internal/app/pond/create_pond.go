@@ -77,9 +77,9 @@ func (h *PondHandler) CreatePondHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	errChan := make(chan error, 1)
-	var res pond.PondResponse
+	var res pond.CreateDomainResponse
 	go func(ctx context.Context) {
-		res, err = h.domain.CreatePondInfo(pond.PondDomainRequest{
+		res, err = h.domain.CreatePondInfo(pond.CreateDomainRequest{
 			Name:         body.Name,
 			Capacity:     body.Capacity,
 			Depth:        body.Depth,
@@ -107,7 +107,7 @@ func (h *PondHandler) CreatePondHandler(w http.ResponseWriter, r *http.Request) 
 	response = mapResonse(res)
 }
 
-func mapResonse(r pond.PondResponse) utilhttp.StandardResponse {
+func mapResonse(r pond.CreateDomainResponse) utilhttp.StandardResponse {
 	var res utilhttp.StandardResponse
 	data := CreatePondResponse{
 		PondID: r.PondID,

@@ -107,7 +107,6 @@ func mapResonseGetByID(r farm.GetFarmInfoByIDResponse) utilhttp.StandardResponse
 			Depth:        pond.Depth,
 			WaterQuality: pond.WaterQuality,
 			Species:      pond.Species,
-			Status:       pond.Status,
 		})
 	}
 
