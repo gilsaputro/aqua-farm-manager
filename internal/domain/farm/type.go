@@ -6,10 +6,9 @@ import (
 
 // list Domain error
 var (
-	ErrDuplicateFarm  = errors.New("Farm Already Exists")
-	ErrCannotEditFarm = errors.New("Cannot Update With Existing Farm Name")
-	ErrInvalidFarm    = errors.New("Farm Is Not Exists")
-	ErrExistsPonds    = errors.New("Cannot Delete Farm While Ponds Is Exists")
+	ErrDuplicateFarm = errors.New("Farm Already Exists")
+	ErrInvalidFarm   = errors.New("Farm Is Not Exists")
+	ErrExistsPonds   = errors.New("Cannot Delete Farm While Ponds Is Exists")
 )
 
 // CreateDomainRequest struct is list parameter for Create Farm domain

@@ -68,7 +68,7 @@ func (h *FarmHandler) CreateFarmHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// checking valid body
-	if len(body.Name) < 1 || (len(body.Location) < 1 && len(body.Area) < 1 && len(body.Owner) < 1) {
+	if len(body.Name) < 1 {
 		code = http.StatusBadRequest
 		err = fmt.Errorf("Invalid Parameter Request")
 		return
@@ -92,7 +92,7 @@ func (h *FarmHandler) CreateFarmHandler(w http.ResponseWriter, r *http.Request) 
 	case err = <-errChan:
 		if err != nil {
 			if err == farm.ErrDuplicateFarm {
-				code = http.StatusBadRequest
+				code = http.StatusOK
 			} else {
 				code = http.StatusInternalServerError
 			}

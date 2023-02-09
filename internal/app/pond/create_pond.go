@@ -70,7 +70,7 @@ func (h *PondHandler) CreatePondHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// checking valid body
-	if len(body.Name) < 1 || body.FarmID < 1 || (len(body.Species) < 1 && body.Capacity < 1 && body.Depth < 1 && body.WaterQuality < 1) {
+	if len(body.Name) < 1 || body.FarmID < 1 {
 		code = http.StatusBadRequest
 		err = fmt.Errorf("Invalid Parameter Request")
 		return
@@ -95,8 +95,8 @@ func (h *PondHandler) CreatePondHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == pond.ErrDuplicatePond || err == pond.ErrInvalidFarm {
-				code = http.StatusBadRequest
+			if err == pond.ErrDuplicatePond || err == pond.ErrInvalidFarm || err == pond.ErrMaxPond {
+				code = http.StatusOK
 			} else {
 				code = http.StatusInternalServerError
 			}

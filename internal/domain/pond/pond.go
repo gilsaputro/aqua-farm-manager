@@ -90,25 +90,20 @@ func mapPondRequest(r CreateDomainRequest) *pond.PondInfraInfo {
 func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, error) {
 	var err error
 	var res UpdateDomainResponse
-	var exists bool
+	var existsPond bool
 
 	verify := &pond.PondInfraInfo{
 		Name: r.Name,
 	}
-	exists, err = p.pondstore.Verify(verify)
+	existsPond, err = p.pondstore.Verify(verify)
 
 	if err != nil {
 		return res, err
 	}
 
-	// reject if the pond is not exists
-	if !exists {
-		return res, ErrInvalidPond
-	}
-
 	if r.FarmID > 0 {
 		// verify farm id
-		exists, err = p.farmstore.Verify(
+		existsFarm, err := p.farmstore.Verify(
 			&farm.FarmInfraInfo{
 				ID: r.FarmID,
 			})
@@ -116,7 +111,7 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 			return res, err
 		}
 		// reject if the farmid is not exists
-		if !exists {
+		if !existsFarm {
 			return res, ErrInvalidFarm
 		}
 	}
@@ -130,7 +125,10 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 		FarmID:       r.FarmID,
 	}
 
-	if !exists {
+	if !existsPond {
+		if pondInfra.FarmID < 1 {
+			return res, ErrInvalidFarm
+		}
 		ponds := p.farmstore.GetActivePondsInFarm(pondInfra.FarmID)
 		if len(ponds) > 10 {
 			return res, ErrMaxPond
@@ -207,7 +205,7 @@ func (p *Pond) DeletePondInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 	}
 
 	if !exists {
-		return res, ErrInvalidFarm
+		return res, ErrInvalidPond
 	}
 
 	err = p.pondstore.Delete(&pond.PondInfraInfo{

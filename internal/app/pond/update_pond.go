@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"aqua-farm-manager/internal/domain/farm"
 	"aqua-farm-manager/internal/domain/pond"
 	utilhttp "aqua-farm-manager/pkg/utilhttp"
 )
@@ -102,8 +101,8 @@ func (h *PondHandler) UpdatePondHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == farm.ErrDuplicateFarm {
-				code = http.StatusBadRequest
+			if err == pond.ErrInvalidFarm || err == pond.ErrMaxPond {
+				code = http.StatusOK
 			} else {
 				code = http.StatusInternalServerError
 			}

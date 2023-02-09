@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"aqua-farm-manager/internal/domain/farm"
@@ -70,8 +69,8 @@ func (h *FarmHandler) DeleteByIDFarmHandler(w http.ResponseWriter, r *http.Reque
 		return
 	case err = <-errChan:
 		if err != nil {
-			if strings.Contains(err.Error(), "not found") {
-				code = http.StatusNotFound
+			if err == farm.ErrInvalidFarm {
+				code = http.StatusOK
 			} else {
 				code = http.StatusInternalServerError
 			}

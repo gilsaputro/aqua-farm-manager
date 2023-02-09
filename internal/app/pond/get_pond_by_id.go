@@ -85,6 +85,7 @@ func (h *PondHandler) GetByIDPondHandler(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			if strings.Contains(err.Error(), "not found") {
 				code = http.StatusNotFound
+				err = fmt.Errorf("Data Not Found")
 			} else {
 				code = http.StatusInternalServerError
 			}
