@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"aqua-farm-manager/internal/model"
 	"aqua-farm-manager/pkg/postgres"
 	"aqua-farm-manager/pkg/redis"
 
@@ -146,12 +147,11 @@ func (s *Stat) BackupMetrics(r BackupMetricsRequest) error {
 		return errors.New("Database Client is not init")
 	}
 
-	val := checkStatExists(db, stat)
-	if val {
-		err = updateStat(db, &stat)
-	} else {
-		err = insert(db, &stat)
-	}
+	err = updateStat(db, &stat)
+
+	stat.Status = model.Active.Value()
+
+	err = insert(db, &stat)
 
 	return err
 }
@@ -263,10 +263,10 @@ func insert(db *gorm.DB, stat *postgres.StatMetrics) error {
 
 // getStatRecodByKey is func to get data into stat table using key
 func getStatRecodByKey(db *gorm.DB, stat *postgres.StatMetrics) error {
-	return db.Where("key = ?", stat.Key).First(stat).Error
+	return db.Where("key = ? and status = ?", stat.Key, model.Active.Value()).First(stat).Error
 }
 
 // updateStat is func to update data into stat table
 func updateStat(db *gorm.DB, stat *postgres.StatMetrics) error {
-	return db.Model(stat).Where("key = ?", stat.Key).Update(postgres.StatMetrics{Request: stat.Request, UniqAgent: stat.UniqAgent}).Error
+	return db.Model(stat).Where("key = ? and status = ?", stat.Key, model.Active.Value()).Update(postgres.StatMetrics{Status: model.Inactive.Value()}).Error
 }

@@ -38,4 +38,5 @@ type StatMetrics struct {
 	UniqAgent  int
 	NumSuccess int
 	NumError   int
+	Status     int
 }
