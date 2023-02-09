@@ -81,9 +81,10 @@ go build ./cmd/aqua-farm-manager/
 ```
 
 ### Postman Collection
-You can import postman collection in : 
+You can import postman collection in Repo File with Name : 
 ```
 Aquafarm Management System.postman_collection.json
 ```
+Or import from [this](https://github.com/gilsaputro/aqua-farm-manager/wiki/Postman-Collection)
 
 Note: The details mentioned in these steps may vary depending on your configuration.
