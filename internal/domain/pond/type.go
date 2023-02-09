@@ -25,16 +25,6 @@ type CreateDomainResponse struct {
 	PondID uint
 }
 
-// PondInfo struct is list parameter response for pond domain
-type PondInfo struct {
-	ID           uint
-	Name         string
-	Capacity     float64
-	Depth        float64
-	WaterQuality float64
-	Species      string
-}
-
 // UpdateDomainRequest struct is list parameter for Update Farm domain
 type UpdateDomainRequest struct {
 	Name         string
@@ -77,4 +67,14 @@ type GetPondInfoResponse struct {
 	WaterQuality float64
 	Species      string
 	FarmID       uint
+	FarmInfo     FarmInfo
+}
+
+// FarmInfo struct is list parameter response for farm
+type FarmInfo struct {
+	ID       uint
+	Name     string
+	Location string
+	Owner    string
+	Area     string
 }

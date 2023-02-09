@@ -1,7 +1,6 @@
 package farm
 
 import (
-	pondDomain "aqua-farm-manager/internal/domain/pond"
 	"aqua-farm-manager/internal/infrastructure/farm"
 	"aqua-farm-manager/internal/infrastructure/pond"
 )
@@ -13,6 +12,7 @@ type FarmDomain interface {
 	UpdateFarmInfo(r UpdateDomainRequest) (UpdateDomainResponse, error)
 	GetFarmInfoByID(ID uint) (GetFarmInfoResponse, error)
 	GetFarm(size, cursor int) ([]GetFarmInfoResponse, int, error)
+	DeleteFarmsWithDependencies(ID uint) (DeleteAllResponse, error)
 }
 
 // Stat is list dependencies stat domain
@@ -183,7 +183,7 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoResponse, error) {
 	if err != nil {
 		return GetFarmInfoResponse{}, err
 	}
-	var listPond []pondDomain.PondInfo
+	var listPond []PondInfo
 	for _, id := range ids {
 		pond := &pond.PondInfraInfo{
 			ID: id,
@@ -192,7 +192,7 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoResponse, error) {
 		if err != nil {
 			continue
 		}
-		listPond = append(listPond, pondDomain.PondInfo{
+		listPond = append(listPond, PondInfo{
 			ID:           pond.ID,
 			Name:         pond.Name,
 			Capacity:     pond.Capacity,
@@ -207,6 +207,7 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoResponse, error) {
 		Location:  farm.Location,
 		Owner:     farm.Owner,
 		Area:      farm.Area,
+		PondIDs:   ids,
 		PondInfos: listPond,
 	}, err
 }
@@ -248,4 +249,56 @@ func (f *Farm) GetFarm(size, cursor int) ([]GetFarmInfoResponse, int, error) {
 	}
 
 	return list, nextPage, err
+}
+
+// DeleteFarmsWithDependencies is func to delete farms and all ponds dependencies
+func (f *Farm) DeleteFarmsWithDependencies(ID uint) (DeleteAllResponse, error) {
+	var err error
+	var res DeleteAllResponse
+	var exists bool
+
+	verify := farm.FarmInfraInfo{ID: ID}
+
+	exists, err = f.farmstore.Verify(&verify)
+
+	if err != nil {
+		return res, err
+	}
+
+	if !exists {
+		return res, ErrInvalidFarm
+	}
+
+	ponds := f.farmstore.GetActivePondsInFarm(verify.ID)
+
+	for _, p := range ponds {
+		verify := pond.PondInfraInfo{
+			ID: p,
+		}
+		_, err = f.pondstore.Verify(&verify)
+		if err != nil {
+			return res, err
+		}
+		err = f.pondstore.Delete(&pond.PondInfraInfo{
+			ID:   verify.ID,
+			Name: verify.Name,
+		})
+		if err != nil {
+			return res, err
+		}
+	}
+
+	err = f.farmstore.Delete(&farm.FarmInfraInfo{
+		ID:   verify.ID,
+		Name: verify.Name,
+	})
+	if err != nil {
+		return res, err
+	}
+
+	res.ID = verify.ID
+	res.Name = verify.Name
+	res.PondIds = ponds
+
+	return res, err
 }

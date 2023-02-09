@@ -43,14 +43,6 @@ services:
       - '5492:5432'
     volumes:
       - ./volumes/postgres:/var/lib/postgresql/data
-  elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.0
-    container_name: aquafarm_elastic_local
-    environment:
-      - xpack.security.enabled=false
-      - "discovery.type=single-node"
-    ports:
-      - 9200:9200
   nsqlookupd:
     image: nsqio/nsq
     command: /nsqlookupd

@@ -274,8 +274,9 @@ func NewServer() (*Server, error) {
 		r.HandleFunc(farmPath.String(), s.middleware.Middleware(s.farmHandler.DeleteFarmHandler)).Methods("DELETE")
 
 		// Init Farm Get By ID
-		getFarmByIDPath := farmPath.String() + "/{id}"
-		r.HandleFunc(getFarmByIDPath, s.middleware.Middleware(s.farmHandler.GetByIDFarmHandler)).Methods("GET")
+		farmByIDPath := farmPath.String() + "/{id}"
+		r.HandleFunc(farmByIDPath, s.middleware.Middleware(s.farmHandler.GetByIDFarmHandler)).Methods("GET")
+		r.HandleFunc(farmByIDPath, s.middleware.Middleware(s.farmHandler.DeleteByIDFarmHandler)).Methods("DELETE")
 
 		// Init Pond Path
 		pondPath := app.Ponds

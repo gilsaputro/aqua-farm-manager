@@ -1,10 +1,8 @@
 function main() {
   init_vault_dir=$1
   schema_vault_dir=$2
-  init_es_dir=$3
-  schema_es_dir=$4
-  init_nsq_dir=$5
-  schema_nsq_dir=$6
+  init_nsq_dir=$3
+  schema_nsq_dir=$4
 
   echo "INFO: checking redis instance..."
   test_redis_env "aquafarm_redis_local" "localhost" "redislocal" 2
@@ -17,15 +15,9 @@ function main() {
 
   echo "INFO: checking nsqlookupd instance..."
   wait_for_http "nsqlookupd" "localhost:4161/ping" 2
-  
-  echo "INFO: checking elasticsearch instance..."
-  wait_for_http "elasticsearch" "localhost:9200/_cluster/health" 2
 
   echo "INFO: storing secret to vault..."
   go run $init_vault_dir/main.go $schema_vault_dir
-
-  echo "INFO: storing mapping to elasticsearch cluster..."
-  go run $init_es_dir/main.go $schema_es_dir
 
   echo "INFO: creating topic to nsq cluster..."
   go run $init_nsq_dir/main.go $schema_nsq_dir

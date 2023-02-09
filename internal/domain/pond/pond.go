@@ -238,6 +238,16 @@ func (p *Pond) GetPondInfoByID(ID uint) (GetPondInfoResponse, error) {
 		return GetPondInfoResponse{}, err
 	}
 
+	farmInfra := &farm.FarmInfraInfo{
+		ID: pondInfra.FarmID,
+	}
+
+	err = p.farmstore.GetFarmByID(farmInfra)
+
+	if err != nil {
+		return GetPondInfoResponse{}, err
+	}
+
 	return GetPondInfoResponse{
 		ID:           pondInfra.ID,
 		Name:         pondInfra.Name,
@@ -245,7 +255,13 @@ func (p *Pond) GetPondInfoByID(ID uint) (GetPondInfoResponse, error) {
 		Depth:        pondInfra.Depth,
 		WaterQuality: pondInfra.WaterQuality,
 		Species:      pondInfra.Species,
-		FarmID:       pondInfra.FarmID,
+		FarmInfo: FarmInfo{
+			ID:       farmInfra.ID,
+			Name:     farmInfra.Name,
+			Location: farmInfra.Location,
+			Owner:    farmInfra.Owner,
+			Area:     farmInfra.Area,
+		},
 	}, err
 }
 

@@ -1,7 +1,6 @@
 package farm
 
 import (
-	"aqua-farm-manager/internal/domain/pond"
 	"errors"
 )
 
@@ -63,5 +62,22 @@ type GetFarmInfoResponse struct {
 	Owner     string
 	Area      string
 	PondIDs   []uint
-	PondInfos []pond.PondInfo
+	PondInfos []PondInfo
+}
+
+// DeleteAllResponse struct is list parameter response for GetFarmInfoByID domain
+type DeleteAllResponse struct {
+	ID      uint
+	Name    string
+	PondIds []uint
+}
+
+// PondInfo struct is list parameter response for pond
+type PondInfo struct {
+	ID           uint
+	Name         string
+	Capacity     float64
+	Depth        float64
+	WaterQuality float64
+	Species      string
 }
