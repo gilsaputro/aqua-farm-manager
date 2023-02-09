@@ -68,28 +68,6 @@ func (p *Pond) Create(r *PondInfraInfo) error {
 	return err
 }
 
-// VerifyByName is func to check if farm already exists by name
-func (p *Pond) VerifyByName(name string) (bool, error) {
-	var err error
-	db := p.pg.GetDB()
-	if db == nil {
-		return false, errors.New("Database Client is not init")
-	}
-
-	pond := &postgres.Ponds{
-		Name: name,
-	}
-
-	return checkFarmExistsByName(db, pond), err
-}
-
-// checkFarmExistsByName is func to check if the data is exist by name
-func checkFarmExistsByName(db *gorm.DB, pond *postgres.Ponds) bool {
-	var count = int64(0)
-	db.Model(pond).Where("name = ? AND status = ?", pond.Name, model.Active.Value()).Count(&count).Limit(1)
-	return count > 0
-}
-
 func insert(db *gorm.DB, data interface{}) error {
 	return db.Create(data).Error
 }
@@ -238,7 +216,6 @@ func delete(db *gorm.DB, pond *postgres.Ponds) error {
 
 // Verify is func to check if pond already exists based on id or name
 func (p *Pond) Verify(r *PondInfraInfo) (bool, error) {
-	var err error
 	var exists bool
 	db := p.pg.GetDB()
 	if db == nil {
@@ -249,23 +226,23 @@ func (p *Pond) Verify(r *PondInfraInfo) (bool, error) {
 
 	if r.ID > 0 {
 		pond.Model.ID = r.ID
-		err = getPondbyID(db, pond)
+		getPondbyID(db, pond)
 	} else if len(r.Name) > 0 {
 		pond.Name = r.Name
-		err = getPondbyName(db, pond)
+		getPondbyName(db, pond)
 	} else {
 		return exists, errors.New("Invalid Parameter Request")
 	}
 
-	if len(pond.Name) == 0 && pond.ID <= 0 {
-		exists = true
-		return exists, err
+	if len(pond.Name) == 0 || pond.ID <= 0 {
+		return exists, nil
 	}
 
+	exists = true
 	r.Name = pond.Name
 	r.ID = pond.ID
 
-	return exists, err
+	return exists, nil
 }
 
 // getPondbyName func to get pond by name

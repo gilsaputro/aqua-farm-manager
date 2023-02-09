@@ -9,6 +9,7 @@ import (
 type PondDomain interface {
 	CreatePondInfo(r CreateDomainRequest) (CreateDomainResponse, error)
 	UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, error)
+	DeletePondInfo(r DeleteDomainRequest) (DeleteDomainResponse, error)
 }
 
 // Stat is list dependencies stat domain
@@ -46,10 +47,6 @@ func (p *Pond) CreatePondInfo(r CreateDomainRequest) (CreateDomainResponse, erro
 		&pond.PondInfraInfo{
 			Name: r.Name,
 		})
-
-	if exists {
-		return res, ErrDuplicatePond
-	}
 
 	if err != nil {
 		return res, err
@@ -96,6 +93,26 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 		return res, err
 	}
 
+	// reject if the pond is not exists
+	if !exists {
+		return res, ErrInvalidPond
+	}
+
+	if r.FarmID > 0 {
+		// verify farm id
+		exists, err = p.farmstore.Verify(
+			&farm.FarmInfraInfo{
+				ID: r.FarmID,
+			})
+		if err != nil {
+			return res, err
+		}
+		// reject if the farmid is not exists
+		if !exists {
+			return res, ErrInvalidFarm
+		}
+	}
+
 	req := &pond.PondInfraInfo{
 		Name:         r.Name,
 		Capacity:     r.Capacity,
@@ -103,19 +120,6 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 		WaterQuality: r.WaterQuality,
 		Species:      r.Species,
 		FarmID:       r.FarmID,
-	}
-
-	// verify farm id
-	exists, err = p.farmstore.Verify(
-		&farm.FarmInfraInfo{
-			ID: r.FarmID,
-		})
-	if err != nil {
-		return res, err
-	}
-	// reject if the farmid is not exists
-	if !exists {
-		return res, ErrInvalidFarm
 	}
 
 	if !exists {
@@ -131,16 +135,16 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 		if r.Species != "" {
 			req.Species = r.Species
 		}
-		if r.Capacity < 0 {
+		if r.Capacity > 0 {
 			req.Capacity = r.Capacity
 		}
-		if r.Depth < 0 {
+		if r.Depth > 0 {
 			req.Depth = r.Depth
 		}
-		if r.WaterQuality < 0 {
+		if r.WaterQuality > 0 {
 			req.WaterQuality = r.WaterQuality
 		}
-		if r.FarmID < 0 {
+		if r.FarmID > 0 {
 			req.FarmID = r.FarmID
 		}
 
@@ -170,10 +174,7 @@ func (p *Pond) DeletePondInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 
 	verify := pond.PondInfraInfo{}
 
-	if r.ID != 0 && len(r.Name) > 0 {
-		verify.ID = r.ID
-		verify.Name = r.Name
-	} else if r.ID != 0 {
+	if r.ID != 0 {
 		verify.ID = r.ID
 	} else if len(r.Name) != 0 {
 		verify.Name = r.Name
@@ -191,15 +192,16 @@ func (p *Pond) DeletePondInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 		return res, ErrInvalidFarm
 	}
 
-	res.ID = r.ID
-	res.Name = r.Name
-	err = p.farmstore.Delete(&farm.FarmInfraInfo{
-		ID:   r.ID,
-		Name: r.Name,
+	err = p.pondstore.Delete(&pond.PondInfraInfo{
+		ID:   verify.ID,
+		Name: verify.Name,
 	})
 	if err != nil {
 		return res, err
 	}
+
+	res.ID = verify.ID
+	res.Name = verify.Name
 
 	return res, err
 }

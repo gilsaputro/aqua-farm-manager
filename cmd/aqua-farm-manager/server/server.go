@@ -280,6 +280,8 @@ func NewServer() (*Server, error) {
 		// Init Pond Path
 		pondPath := app.Ponds
 		r.HandleFunc(pondPath.String(), s.middleware.Middleware(s.pondHandler.CreatePondHandler)).Methods("POST")
+		r.HandleFunc(pondPath.String(), s.middleware.Middleware(s.pondHandler.UpdatePondHandler)).Methods("PUT")
+		r.HandleFunc(pondPath.String(), s.middleware.Middleware(s.pondHandler.DeletePondHandler)).Methods("Delete")
 
 		// Init Stat Path
 		statPath := app.Stat

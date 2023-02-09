@@ -2,30 +2,91 @@ package pond
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
+	"aqua-farm-manager/internal/domain/pond"
 	utilhttp "aqua-farm-manager/pkg/utilhttp"
 )
 
-// DeleteFarmHandler is func handler for delete pond data
-func (h *PondHandler) DeleteFarmHandler(w http.ResponseWriter, r *http.Request) {
+// DeletePondRequest is list request parameter for Delete Api
+type DeletePondRequest struct {
+	PondID   uint   `json:"id"`
+	PondName string `json:"name"`
+}
+
+// DeletePondResponse is list response parameter for Delete Api
+type DeletePondResponse struct {
+	PondID   uint   `json:"id"`
+	PondName string `json:"name"`
+}
+
+// DeletePondHandler is func handler for Delete Pond data
+func (h *PondHandler) DeletePondHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(h.timeoutInSec)*time.Second)
 	defer cancel()
 
 	var err error
-	var response []byte
-	var code int = 200
+	var response utilhttp.StandardResponse
+	var code int = http.StatusOK
 
 	defer func() {
-		utilhttp.WriteResponse(w, response, code)
+		response.Code = code
+		if err == nil {
+			response.Message = "success"
+		} else {
+			response.Message = err.Error()
+		}
+
+		data, errMarshal := json.Marshal(response)
+		if errMarshal != nil {
+			log.Println("[DeletePondHandler]-Error Marshal Response :", err)
+			code = http.StatusInternalServerError
+			data = []byte(`{"code":500,"message":"Internal Server Error"}`)
+		}
+		utilhttp.WriteResponse(w, data, code)
 	}()
 
-	errChan := make(chan error, 1)
+	var body DeletePondRequest
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		code = http.StatusBadRequest
+		err = fmt.Errorf("Bad Request")
+		return
+	}
 
+	err = json.Unmarshal(data, &body)
+	if err != nil {
+		code = http.StatusBadRequest
+		err = fmt.Errorf("Bad Request")
+		return
+	}
+
+	// checking valid body
+	if len(body.PondName) < 1 && body.PondID < 1 {
+		code = http.StatusBadRequest
+		err = fmt.Errorf("Invalid Parameter Request")
+		return
+	}
+
+	if len(body.PondName) > 1 && body.PondID > 0 {
+		code = http.StatusBadRequest
+		err = fmt.Errorf("Please Choose to delete by ID or Name")
+		return
+	}
+
+	errChan := make(chan error, 1)
+	var res pond.DeleteDomainResponse
 	go func(ctx context.Context) {
-		errChan <- nil
+		res, err = h.domain.DeletePondInfo(pond.DeleteDomainRequest{
+			Name: body.PondName,
+			ID:   body.PondID,
+		})
+		errChan <- err
 	}(ctx)
 
 	select {
@@ -33,10 +94,24 @@ func (h *PondHandler) DeleteFarmHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case err = <-errChan:
 		if err != nil {
-			fmt.Println(err)
+			if err == pond.ErrInvalidPond {
+				code = http.StatusBadRequest
+			} else {
+				code = http.StatusInternalServerError
+			}
 			return
 		}
 	}
 
-	response = []byte(`{"hello":"DELETE"}`)
+	response = mapResonseDelete(res)
+}
+
+func mapResonseDelete(r pond.DeleteDomainResponse) utilhttp.StandardResponse {
+	var res utilhttp.StandardResponse
+	data := DeletePondResponse{
+		PondID:   r.ID,
+		PondName: r.Name,
+	}
+	res.Data = data
+	return res
 }

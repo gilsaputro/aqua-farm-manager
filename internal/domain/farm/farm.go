@@ -74,10 +74,7 @@ func (f *Farm) DeleteFarmInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 	var exists bool
 
 	verify := farm.FarmInfraInfo{}
-	if r.ID != 0 && len(r.Name) > 0 {
-		verify.ID = r.ID
-		verify.Name = r.Name
-	} else if r.ID != 0 {
+	if r.ID != 0 {
 		verify.ID = r.ID
 	} else if len(r.Name) != 0 {
 		verify.Name = r.Name
