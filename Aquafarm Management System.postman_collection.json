@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "70abe8ef-2d54-47d2-99da-e9d3af91c5ce",
+		"_postman_id": "8e0004c3-a8ec-4459-bd70-5d6792dd544a",
 		"name": "Aquafarm Management System",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -68,7 +68,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"Farm 1\",\r\n    \"location\": \"Texas\",\r\n    \"owner\": \"John Doe\",\r\n    \"area\": \"2 KM\"\r\n}",
+							"raw": "{\r\n    \"name\": \"Green Pastures\",\r\n    \"location\": \"California\",\r\n    \"owner\": \"Jane Doe\",\r\n    \"area\": \"7.5 Acres\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -97,7 +97,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"Farm 1\",\r\n    \"location\": \"Texas\",\r\n    \"owner\": \"John John\",\r\n    \"area\": \"3 KM\"\r\n}",
+							"raw": "{\r\n    \"name\": \"Green Pastures\",\r\n    \"location\": \"California\",\r\n    \"owner\": \"Jane Doe\",\r\n    \"area\": \"7.5 Acres\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -126,7 +126,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"name\"\r\n}\r\n",
+							"raw": "{\r\n   \"name\": \"Green Pastures\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -242,7 +242,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:32001/v1/ponds/11",
+							"raw": "http://localhost:32001/v1/ponds/1",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -251,7 +251,7 @@
 							"path": [
 								"v1",
 								"ponds",
-								"11"
+								"1"
 							]
 						}
 					},
@@ -264,7 +264,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"Pond 1\",\r\n    \"capacity\": 100,\r\n    \"depth\": 10,\r\n    \"water_quality\": 6,\r\n    \"species\": \"Flying Fish\",\r\n    \"farm_id\": 1\r\n}",
+							"raw": "{\r\n    \"name\": \"Crystal Clear Pond\",\r\n    \"capacity\": 125,\r\n    \"depth\": 12,\r\n    \"water_quality\": 7,\r\n    \"species\": \"Gliding Carp\",\r\n    \"farm_id\": 1\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -293,7 +293,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"kolam 2\",\r\n    \"farm_id\": 2,\r\n    \"capacity\": 100,\r\n    \"depth\": 10,\r\n    \"water_quality\": 6,\r\n    \"species\": \"ikan mas 2\"\r\n}",
+							"raw": "{\r\n    \"name\": \"Crystal Clear Pond\",\r\n    \"capacity\": 125,\r\n    \"depth\": 12,\r\n    \"water_quality\": 7,\r\n    \"species\": \"Gliding Carp\",\r\n    \"farm_id\": 1\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -322,7 +322,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\" : \"Flying Fish\"\r\n}\r\n",
+							"raw": "{\r\n    \"name\": \"Crystal Clear Pond\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
