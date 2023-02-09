@@ -75,7 +75,7 @@ func (c *TrackingEventConsumer) HandleMessage(msg *nsq.Message) error {
 	// Validate path contain ID
 	path := body.Path
 	// Should be change to apply global path
-	re := regexp.MustCompile(`^/(farms|ponds)/(\d+)$`)
+	re := regexp.MustCompile(`^/(.+)/(\d+)$`)
 	split := re.FindStringSubmatch(path)
 	if len(split) > 1 {
 		path = "/" + split[1]

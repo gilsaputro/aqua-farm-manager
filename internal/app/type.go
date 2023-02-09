@@ -14,9 +14,9 @@ const (
 // this list define all known of path setting
 var (
 	UrlIDName = map[UrlID]string{
-		Farms: "/farms",
-		Ponds: "/ponds",
-		Stat:  "/stat",
+		Farms: "/v1/farms",
+		Ponds: "/v1/ponds",
+		Stat:  "/v1/stat",
 	}
 
 	UrlIDValue = map[string]UrlID{
