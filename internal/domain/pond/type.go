@@ -7,6 +7,7 @@ var (
 	ErrDuplicatePond = errors.New("Pond Is Already Exists")
 	ErrInvalidFarm   = errors.New("Farm Is Not Exists")
 	ErrInvalidPond   = errors.New("Pond Is Not Exists")
+	ErrMaxPond       = errors.New("Farm Already Have Max Ponds")
 )
 
 // CreateDomainRequest struct is list parameter request for pond domain

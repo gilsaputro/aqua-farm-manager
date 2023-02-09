@@ -17,6 +17,7 @@ type FarmStore interface {
 	GetFarmByName(r *FarmInfraInfo) error
 	GetFarmByID(r *FarmInfraInfo) error
 	GetFarmWithPaging(r GetFarmWithPagingRequest) ([]FarmInfraInfo, error)
+	GetActivePondsInFarm(farmid uint) []uint
 }
 
 // Farm is list dependencies farm store
@@ -250,4 +251,26 @@ func getFarmsWithPaging(db *gorm.DB, cursor int, size int) ([]postgres.Farms, er
 		return nil, err
 	}
 	return farms, err
+}
+
+func getActivePondsInFarms(db *gorm.DB, farmID uint) []uint {
+	var farmPondsMappings []postgres.FarmPondsMapping
+	var pondsID []uint
+
+	db.Joins("JOIN ponds ON ponds.id = farm_ponds_mappings.ponds_id").Where("ponds.status = ? AND farm_ponds_mappings.farm_id = ?", model.Active, farmID).Find(&farmPondsMappings)
+
+	for _, mapping := range farmPondsMappings {
+		pondsID = append(pondsID, mapping.PondsID)
+	}
+
+	return pondsID
+}
+
+func (f *Farm) GetActivePondsInFarm(farmid uint) []uint {
+	db := f.pg.GetDB()
+	if db == nil {
+		return []uint{}
+	}
+
+	return getActivePondsInFarms(db, farmid)
 }

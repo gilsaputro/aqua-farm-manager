@@ -46,14 +46,14 @@ func (f *Farm) CreateFarmInfo(r CreateDomainRequest) (CreateDomainResponse, erro
 		return res, ErrDuplicateFarm
 	}
 
-	farm := mapCreateFarmInfoRequest(r)
+	farmsInfra := mapCreateFarmInfoRequest(r)
 
-	err = f.farmstore.Create(&farm)
+	err = f.farmstore.Create(&farmsInfra)
 	if err != nil {
 		return res, err
 	}
 
-	res.ID = farm.ID
+	res.ID = farmsInfra.ID
 
 	return res, err
 }
@@ -92,6 +92,12 @@ func (f *Farm) DeleteFarmInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 		return res, ErrInvalidFarm
 	}
 
+	ponds := f.farmstore.GetActivePondsInFarm(verify.ID)
+
+	if len(ponds) > 0 {
+		return res, ErrExistsPonds
+	}
+
 	err = f.farmstore.Delete(&farm.FarmInfraInfo{
 		ID:   verify.ID,
 		Name: verify.Name,
@@ -119,32 +125,32 @@ func (f *Farm) UpdateFarmInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 		return res, err
 	}
 
-	req := &farm.FarmInfraInfo{
+	farmsInfra := &farm.FarmInfraInfo{
 		Name:     r.Name,
 		Location: r.Location,
 		Owner:    r.Owner,
 		Area:     r.Area,
 	}
 	if !exists {
-		err = f.farmstore.Create(req)
+		err = f.farmstore.Create(farmsInfra)
 	} else {
-		err = f.farmstore.GetFarmByName(req)
+		err = f.farmstore.GetFarmByName(farmsInfra)
 		if err != nil {
 			return res, err
 		}
 
 		// validate nil request
 		if r.Location != "" {
-			req.Location = r.Location
+			farmsInfra.Location = r.Location
 		}
 		if r.Owner != "" {
-			req.Owner = r.Owner
+			farmsInfra.Owner = r.Owner
 		}
 		if r.Area != "" {
-			req.Area = r.Area
+			farmsInfra.Area = r.Area
 		}
 
-		err = f.farmstore.Update(req)
+		err = f.farmstore.Update(farmsInfra)
 	}
 
 	if err != nil {
@@ -152,11 +158,11 @@ func (f *Farm) UpdateFarmInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 	}
 
 	return UpdateDomainResponse{
-		ID:       req.ID,
-		Name:     req.Name,
-		Location: req.Location,
-		Owner:    req.Owner,
-		Area:     req.Area,
+		ID:       farmsInfra.ID,
+		Name:     farmsInfra.Name,
+		Location: farmsInfra.Location,
+		Owner:    farmsInfra.Owner,
+		Area:     farmsInfra.Area,
 	}, err
 }
 
@@ -209,7 +215,7 @@ func (f *Farm) GetFarmInfoByID(ID uint) (GetFarmInfoResponse, error) {
 func (f *Farm) GetFarm(size, cursor int) ([]GetFarmInfoResponse, int, error) {
 	var err error
 	var list []GetFarmInfoResponse
-	farms, err := f.farmstore.GetFarmWithPaging(
+	farmsInfra, err := f.farmstore.GetFarmWithPaging(
 		farm.GetFarmWithPagingRequest{
 			Size:   size,
 			Cursor: cursor,
@@ -219,7 +225,7 @@ func (f *Farm) GetFarm(size, cursor int) ([]GetFarmInfoResponse, int, error) {
 		return list, 0, err
 	}
 
-	for _, farm := range farms {
+	for _, farm := range farmsInfra {
 		ids, err := f.pondstore.GetPondIDbyFarmID(farm.ID)
 		if err != nil {
 			continue
@@ -237,7 +243,7 @@ func (f *Farm) GetFarm(size, cursor int) ([]GetFarmInfoResponse, int, error) {
 	}
 
 	nextPage := cursor + 1
-	if len(farms) < size {
+	if len(farmsInfra) < size {
 		nextPage = 0
 	}
 

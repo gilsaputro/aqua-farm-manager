@@ -58,13 +58,19 @@ func (p *Pond) CreatePondInfo(r CreateDomainRequest) (CreateDomainResponse, erro
 		return res, ErrDuplicatePond
 	}
 
-	pondinfo := mapPondRequest(r)
-	err = p.pondstore.Create(pondinfo)
+	pondinfra := mapPondRequest(r)
+
+	ponds := p.farmstore.GetActivePondsInFarm(pondinfra.FarmID)
+	if len(ponds) > 10 {
+		return res, ErrMaxPond
+	}
+
+	err = p.pondstore.Create(pondinfra)
 	if err != nil {
 		return res, err
 	}
 
-	res.PondID = pondinfo.ID
+	res.PondID = pondinfra.ID
 
 	return res, err
 }
@@ -115,7 +121,7 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 		}
 	}
 
-	req := &pond.PondInfraInfo{
+	pondInfra := &pond.PondInfraInfo{
 		Name:         r.Name,
 		Capacity:     r.Capacity,
 		Depth:        r.Depth,
@@ -125,32 +131,42 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 	}
 
 	if !exists {
-		err = p.pondstore.Create(req)
+		ponds := p.farmstore.GetActivePondsInFarm(pondInfra.FarmID)
+		if len(ponds) > 10 {
+			return res, ErrMaxPond
+		}
+		err = p.pondstore.Create(pondInfra)
 	} else {
-		req.ID = verify.ID
-		err = p.pondstore.GetPondByID(req)
+		pondInfra.ID = verify.ID
+		err = p.pondstore.GetPondByID(pondInfra)
 		if err != nil {
 			return res, err
 		}
 
 		// validate nil request
 		if r.Species != "" {
-			req.Species = r.Species
+			pondInfra.Species = r.Species
 		}
 		if r.Capacity > 0 {
-			req.Capacity = r.Capacity
+			pondInfra.Capacity = r.Capacity
 		}
 		if r.Depth > 0 {
-			req.Depth = r.Depth
+			pondInfra.Depth = r.Depth
 		}
 		if r.WaterQuality > 0 {
-			req.WaterQuality = r.WaterQuality
+			pondInfra.WaterQuality = r.WaterQuality
 		}
-		if r.FarmID > 0 {
-			req.FarmID = r.FarmID
+		// check before modify farm
+		if r.FarmID != pondInfra.FarmID {
+			ponds := p.farmstore.GetActivePondsInFarm(r.FarmID)
+			if len(ponds) > 10 {
+				return res, ErrMaxPond
+			}
+
+			pondInfra.FarmID = r.FarmID
 		}
 
-		err = p.pondstore.Update(req)
+		err = p.pondstore.Update(pondInfra)
 	}
 
 	if err != nil {
@@ -158,13 +174,13 @@ func (p *Pond) UpdatePondInfo(r UpdateDomainRequest) (UpdateDomainResponse, erro
 	}
 
 	return UpdateDomainResponse{
-		ID:           req.ID,
-		Name:         req.Name,
-		Capacity:     req.Capacity,
-		Depth:        req.Depth,
-		WaterQuality: req.Depth,
-		Species:      req.Species,
-		FarmID:       req.FarmID,
+		ID:           pondInfra.ID,
+		Name:         pondInfra.Name,
+		Capacity:     pondInfra.Capacity,
+		Depth:        pondInfra.Depth,
+		WaterQuality: pondInfra.Depth,
+		Species:      pondInfra.Species,
+		FarmID:       pondInfra.FarmID,
 	}, err
 }
 
@@ -212,24 +228,24 @@ func (p *Pond) DeletePondInfo(r DeleteDomainRequest) (DeleteDomainResponse, erro
 func (p *Pond) GetPondInfoByID(ID uint) (GetPondInfoResponse, error) {
 	var err error
 
-	pond := &pond.PondInfraInfo{
+	pondInfra := &pond.PondInfraInfo{
 		ID: ID,
 	}
 
-	err = p.pondstore.GetPondByID(pond)
+	err = p.pondstore.GetPondByID(pondInfra)
 
 	if err != nil {
 		return GetPondInfoResponse{}, err
 	}
 
 	return GetPondInfoResponse{
-		ID:           pond.ID,
-		Name:         pond.Name,
-		Capacity:     pond.Capacity,
-		Depth:        pond.Depth,
-		WaterQuality: pond.WaterQuality,
-		Species:      pond.Species,
-		FarmID:       pond.FarmID,
+		ID:           pondInfra.ID,
+		Name:         pondInfra.Name,
+		Capacity:     pondInfra.Capacity,
+		Depth:        pondInfra.Depth,
+		WaterQuality: pondInfra.WaterQuality,
+		Species:      pondInfra.Species,
+		FarmID:       pondInfra.FarmID,
 	}, err
 }
 
@@ -237,7 +253,7 @@ func (p *Pond) GetPondInfoByID(ID uint) (GetPondInfoResponse, error) {
 func (p *Pond) GetAllPond(size, cursor int) ([]GetPondInfoResponse, int, error) {
 	var err error
 	var list []GetPondInfoResponse
-	ponds, err := p.pondstore.GetPondWithPaging(
+	pondInfra, err := p.pondstore.GetPondWithPaging(
 		pond.GetPondWithPagingRequest{
 			Size:   size,
 			Cursor: cursor,
@@ -247,7 +263,7 @@ func (p *Pond) GetAllPond(size, cursor int) ([]GetPondInfoResponse, int, error) 
 		return list, 0, err
 	}
 
-	for _, pond := range ponds {
+	for _, pond := range pondInfra {
 		info := GetPondInfoResponse{
 			ID:           pond.ID,
 			Name:         pond.Name,
@@ -262,7 +278,7 @@ func (p *Pond) GetAllPond(size, cursor int) ([]GetPondInfoResponse, int, error) 
 	}
 
 	nextPage := cursor + 1
-	if len(ponds) < size {
+	if len(pondInfra) < size {
 		nextPage = 0
 	}
 
