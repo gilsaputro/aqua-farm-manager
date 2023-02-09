@@ -4,6 +4,12 @@ A prototype repository for the development of an aquafarm management application
 ## Getting Started
 These intruction will get you a project and how to run the binary on your local machine.
 
+## High-Level Design (HLD)
+For a detailed understanding of the system architecture and design, please refer to the [High-Level Design (HLD)](https://github.com/gilsaputro/aqua-farm-manager/wiki) document.
+
+## API Documentation
+The API documentation can be found in the [API Documentation](https://github.com/gilsaputro/aqua-farm-manager/wiki/Farm-Create) file in the repository. This file contains information on the endpoints, request and response formats, and any necessary details.
+
 ### Prerequsites
 The AquaFarm management system requires Go 1.19 or higher and Docker installed on the local machine in order to run the binary.
 
@@ -22,10 +28,18 @@ Follow this step if you don't have golang 1.19 on your machine :
 - Once the installation is complete, verify that Go has been installed correctly by running the following command in your terminal: "go version".
 
 ## How to run locally
-### Building:
+### Clone Repository:
 Once you have all the prerequisites properly installed, you can start by cloning this repository.
--Clone the Repository: Use "git clone" to clone the AquaFarm management repository to the directory you created in step 1a.
-- Change Directory: Change to the directory of the cloned repository by using the "cd" command.
+- To clone the repository, run the following command in your terminal:
+```
+git clone https://github.com/gilsaputro/aqua-farm-manager.git
+```
+- To navigate to the repository directory, run the following command in your terminal:
+```
+cd aqua-farm-manager
+```
+Note: These instructions assume that you have Git installed on your machine. If you don't have Git installed, you can follow the instructions on the Git website to install it.
+
 ### Docker Setup:
 To run the AquaFarm management system binary correctly, it is necessary to connect it with the related dependencies. This can be done simply by executing the following command: 
 
