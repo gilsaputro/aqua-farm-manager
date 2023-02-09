@@ -1,14 +1,14 @@
 # aqua-farm-manager
-A prototype repository for the development of an aquafarm management application.
-
-## Getting Started
-These intruction will get you a project and how to run the binary on your local machine.
+This repository contains the prototype for an Aquafarm Management Application.
 
 ## High-Level Design (HLD)
 For a detailed understanding of the system architecture and design, please refer to the [High-Level Design (HLD)](https://github.com/gilsaputro/aqua-farm-manager/wiki) document.
 
 ## API Documentation
 The API documentation can be found in the [API Documentation](https://github.com/gilsaputro/aqua-farm-manager/wiki/Farm-Create) file in the repository. This file contains information on the endpoints, request and response formats, and any necessary details.
+
+## Getting Started
+These intruction will get you a project and how to run the binary on your local machine.
 
 ### Prerequsites
 The AquaFarm management system requires Go 1.19 or higher and Docker installed on the local machine in order to run the binary.
@@ -51,7 +51,7 @@ The deps-init command will perform the following actions:
 - Build Vault and store secrets
 - Build Redis and verify that it is running
 - Build Postgres and verify that it is running
-- Build NSQ and create a topic for the aqua_farm_tracking_event."
+- Build NSQ and create a topic for the aqua_farm_tracking_event
 
 To stop the dependencies, run :
 ```azure
@@ -59,9 +59,9 @@ make deps-tear
 ```
 
 ### Running Binary:
-Once you have cloned the repository and set up the dependencies, you can run the binary using either of the following methods:
+Once you have cloned the repository and set up the docker dependencies, you can run the binary using either of the following methods:
 
-you can download depedencies using
+Run vendor to download package dependencies
 
 ```
 go mod vendor
@@ -81,7 +81,9 @@ go build ./cmd/aqua-farm-manager/
 ```
 
 ### Postman Collection
-You can import postman Collention in : 
-./Aquafarm Management System.postman_collection.json
+You can import postman collection in : 
+```
+Aquafarm Management System.postman_collection.json
+```
 
 Note: The details mentioned in these steps may vary depending on your configuration.
