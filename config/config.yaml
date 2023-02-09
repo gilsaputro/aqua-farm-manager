@@ -1,3 +1,4 @@
+port: 32001
 vault:
   token : "root"
   vault_host : localhost:8200

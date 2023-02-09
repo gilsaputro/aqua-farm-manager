@@ -293,8 +293,11 @@ func NewServer() (*Server, error) {
 		statPath := app.Stat
 		r.HandleFunc(statPath.String(), s.statHandler.GetStatHandler).Methods("GET")
 
+		port := ":" + s.cfg.Port
+		log.Println("running on port ", port)
+
 		server := &http.Server{
-			Addr:    ":8080",
+			Addr:    port,
 			Handler: r,
 		}
 

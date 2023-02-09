@@ -33,12 +33,28 @@ To run the AquaFarm management system binary correctly, it is necessary to conne
 make deps-init
 ```
 
+The deps-init command will perform the following actions:
+    a. Build Vault and store secrets
+    b. Build Redis and verify that it is running
+    c. Build Postgres and verify that it is running
+    d. Build NSQ and create a topic for the aqua_farm_tracking_event."
+
 To stop the dependencies, run :
 ```azure
 make deps-tear
 ```
 
 ### Running Binary:
-To run the AquaFarm management system binary correctly.
+Once you have cloned the repository and set up the dependencies, you can run the binary using either of the following methods:
+```
+go run ./cmd/aqua-farm-manager/main.go
+```
+
+or 
+
+```
+go build ./cmd/aqua-farm-manager/
+./aqua-farm-manager
+```
 
 Note: The details mentioned in these steps may vary depending on your configuration.

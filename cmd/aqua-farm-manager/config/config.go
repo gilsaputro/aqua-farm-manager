@@ -11,6 +11,7 @@ import (
 
 // Config struct to hold the configuration data for server
 type Config struct {
+	Port          string   `yaml:"port"`
 	Vault         Vault    `yaml:"vault"`
 	Redis         Redis    `yaml:"redis"`
 	Postgres      Postgres `yaml:"postgres"`
