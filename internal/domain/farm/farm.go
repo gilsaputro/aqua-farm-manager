@@ -229,7 +229,7 @@ func (f *Farm) GetFarm(size, cursor int) ([]GetFarmInfoResponse, int, error) {
 	for _, farm := range farmsInfra {
 		ids, err := f.pondstore.GetPondIDbyFarmID(farm.ID)
 		if err != nil {
-			continue
+			return list, 0, err
 		}
 		info := GetFarmInfoResponse{
 			ID:       farm.ID,
@@ -272,16 +272,16 @@ func (f *Farm) DeleteFarmsWithDependencies(ID uint) (DeleteAllResponse, error) {
 	ponds := f.farmstore.GetActivePondsInFarm(verify.ID)
 
 	for _, p := range ponds {
-		verify := pond.PondInfraInfo{
+		verifyPond := pond.PondInfraInfo{
 			ID: p,
 		}
-		_, err = f.pondstore.Verify(&verify)
+		_, err = f.pondstore.Verify(&verifyPond)
 		if err != nil {
 			return res, err
 		}
 		err = f.pondstore.Delete(&pond.PondInfraInfo{
-			ID:   verify.ID,
-			Name: verify.Name,
+			ID:   verifyPond.ID,
+			Name: verifyPond.Name,
 		})
 		if err != nil {
 			return res, err
