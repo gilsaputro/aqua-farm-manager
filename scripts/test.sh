@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # List all Go files excluding cmd, vendor, and pkg directories
-list_files=$(go list ./... | grep -v /cmd/ | grep -v /vendor/ | grep -v /pkg/ | grep -v mock)
+list_files=$(go list ./... | grep -v /cmd/ | grep -v /vendor/ | grep -v /pkg/ | grep -v mock | grep -v /scripts/)
 
 # Run the Go tests and capture the output to a file
 echo "=== RUNNING TEST ==="
@@ -39,4 +39,3 @@ echo ""
 echo "=== TEST SUMMARY ==="
 echo "Success: $success_count/$list_count"
 echo "Average coverage: $average_coverage%"
-echo "Sum Coverage: $coverage_sum%"
