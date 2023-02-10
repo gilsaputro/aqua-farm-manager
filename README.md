@@ -1,4 +1,4 @@
-# aqua-farm-manager
+# Aqua Farm Manager
 This repository contains the prototype for an Aquafarm Management Application.
 
 ## High-Level Design (HLD)
