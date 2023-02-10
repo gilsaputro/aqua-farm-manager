@@ -95,8 +95,10 @@ func (h *PondHandler) CreatePondHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	case err = <-errChan:
 		if err != nil {
-			if err == pond.ErrDuplicatePond || err == pond.ErrInvalidFarm || err == pond.ErrMaxPond {
-				code = http.StatusOK
+			if err == pond.ErrDuplicatePond || err == pond.ErrMaxPond {
+				code = http.StatusConflict
+			} else if err == pond.ErrInvalidFarm {
+				code = http.StatusNotFound
 			} else {
 				code = http.StatusInternalServerError
 			}

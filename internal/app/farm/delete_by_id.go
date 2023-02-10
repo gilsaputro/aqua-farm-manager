@@ -70,7 +70,7 @@ func (h *FarmHandler) DeleteByIDFarmHandler(w http.ResponseWriter, r *http.Reque
 	case err = <-errChan:
 		if err != nil {
 			if err == farm.ErrInvalidFarm {
-				code = http.StatusOK
+				code = http.StatusNotFound
 			} else {
 				code = http.StatusInternalServerError
 			}

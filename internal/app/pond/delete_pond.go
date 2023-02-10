@@ -95,7 +95,7 @@ func (h *PondHandler) DeletePondHandler(w http.ResponseWriter, r *http.Request) 
 	case err = <-errChan:
 		if err != nil {
 			if err == pond.ErrInvalidPond {
-				code = http.StatusOK
+				code = http.StatusNotFound
 			} else {
 				code = http.StatusInternalServerError
 			}
