@@ -5,7 +5,6 @@ type Status int
 
 // The following constant are the know status
 const (
-	Deleted  Status = -1
 	Unknown  Status = 0
 	Active   Status = 1
 	Inactive Status = 2
