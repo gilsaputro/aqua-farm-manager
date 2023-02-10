@@ -82,6 +82,12 @@ go build ./cmd/aqua-farm-manager/
 ./aqua-farm-manager
 ```
 
+to run go test you can use :
+```
+make test
+```
+
+
 ### Postman Collection
 You can import postman collection in Repo File with Name : 
 ```
