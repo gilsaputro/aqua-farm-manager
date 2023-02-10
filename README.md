@@ -67,6 +67,8 @@ Run vendor to download package dependencies
 go mod vendor
 ```
 
+Note: If you have change the docker config please change the config in /config/config.yaml before run it
+
 And run using :
 
 ```
