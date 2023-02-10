@@ -92,7 +92,7 @@ func (h *FarmHandler) CreateFarmHandler(w http.ResponseWriter, r *http.Request) 
 	case err = <-errChan:
 		if err != nil {
 			if err == farm.ErrDuplicateFarm {
-				code = http.StatusOK
+				code = http.StatusConflict
 			} else {
 				code = http.StatusInternalServerError
 			}
