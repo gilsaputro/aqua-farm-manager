@@ -229,7 +229,7 @@ func NewServer() (*Server, error) {
 
 	// Init Tracking Event Consumer
 	{
-		consumer := trackingevent.NewTrackingEverntConsumer(
+		consumer := trackingevent.NewTrackingEventConsumer(
 			s.cfg.TrackingEvent.Topic,
 			s.cfg.TrackingEvent.Channel,
 			s.cfg.NSQ.ConsumerHost,

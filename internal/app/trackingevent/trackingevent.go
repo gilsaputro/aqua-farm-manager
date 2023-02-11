@@ -23,8 +23,8 @@ type TrackingEventConsumer struct {
 	stat         stat.StatDomain
 }
 
-// NewTrackingEverntConsumer is func to create TrackingEventConsumer
-func NewTrackingEverntConsumer(topic, channel, host string, maxInFlight, numconsumer, timeoutInSec int, stat stat.StatDomain) *TrackingEventConsumer {
+// NewTrackingEventConsumer is func to create TrackingEventConsumer
+func NewTrackingEventConsumer(topic, channel, host string, maxInFlight, numconsumer, timeoutInSec int, stat stat.StatDomain) *TrackingEventConsumer {
 	return &TrackingEventConsumer{
 		topic:        topic,
 		channel:      channel,
@@ -64,7 +64,7 @@ func (c *TrackingEventConsumer) HandleMessage(msg *nsq.Message) error {
 	err = json.Unmarshal(msg.Body, &body)
 	if err != nil {
 		fmt.Println("TrackingEventConsumer-Got Error Unmarshal :", err)
-		return nil
+		return err
 	}
 
 	// checking valid body
