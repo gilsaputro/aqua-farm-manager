@@ -124,12 +124,17 @@ func TestStat_GenerateStatAPI(t *testing.T) {
 					UrlID:  "2",
 					Method: "DELETE",
 				}).Return(stat.MetricsInfo{}, fmt.Errorf("some error"))
+				r.EXPECT().GetStatData(gomock.Any()).Return(stat.MetricsInfo{NumRequest: "1", NumUniqAgent: "1", NumSuccess: "1", NumError: "1"}, nil).Times(4)
 			},
 			want: map[string]StatMetrics{
 				"DELETE /v1/farms": {1, 1, 1, 1},
 				"GET /v1/farms":    {1, 1, 1, 1},
 				"POST /v1/farms":   {1, 1, 1, 1},
 				"PUT /v1/farms":    {1, 1, 1, 1},
+				"DELETE /v1/ponds": {1, 1, 1, 1},
+				"GET /v1/ponds":    {1, 1, 1, 1},
+				"POST /v1/ponds":   {1, 1, 1, 1},
+				"PUT /v1/ponds":    {1, 1, 1, 1},
 			},
 		},
 	}

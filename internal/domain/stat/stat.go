@@ -58,7 +58,14 @@ func (s *Stat) GenerateStatAPI() map[string]StatMetrics {
 				Method: method,
 			})
 			if err != nil {
-				continue
+				// get data using database
+				metric, err = s.store.GetStatData(stat.GetStatDataRequest{
+					UrlID:  url,
+					Method: method,
+				})
+				if err != nil {
+					continue
+				}
 			}
 
 			count_req, _ := strconv.Atoi(metric.NumRequest)
