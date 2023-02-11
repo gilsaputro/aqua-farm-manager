@@ -40,6 +40,10 @@ func (f *Farm) Create(r *FarmInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
+	if r == nil {
+		return errors.New("got nil request")
+	}
+
 	farm := &postgres.Farms{
 		Name:     r.Name,
 		Location: r.Location,
@@ -64,6 +68,10 @@ func (f *Farm) Update(r *FarmInfraInfo) error {
 	db := f.pg.GetDB()
 	if db == nil {
 		return errors.New("Database Client is not init")
+	}
+
+	if r == nil {
+		return errors.New("got nil request")
 	}
 
 	farm := &postgres.Farms{
@@ -93,6 +101,10 @@ func (f *Farm) Delete(r *FarmInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
+	if r == nil {
+		return errors.New("got nil request")
+	}
+
 	farm := &postgres.Farms{
 		Model: gorm.Model{
 			ID: r.ID,
@@ -114,6 +126,10 @@ func (f *Farm) GetFarmByName(r *FarmInfraInfo) error {
 	db := f.pg.GetDB()
 	if db == nil {
 		return errors.New("Database Client is not init")
+	}
+
+	if r == nil {
+		return errors.New("got nil request")
 	}
 
 	farm := &postgres.Farms{
@@ -139,6 +155,10 @@ func (f *Farm) GetFarmByID(r *FarmInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
+	if r == nil {
+		return errors.New("got nil request")
+	}
+
 	farm := &postgres.Farms{
 		Model: gorm.Model{
 			ID: r.ID,
@@ -162,6 +182,10 @@ func (f *Farm) Verify(r *FarmInfraInfo) (bool, error) {
 	db := f.pg.GetDB()
 	if db == nil {
 		return false, errors.New("Database Client is not init")
+	}
+
+	if r == nil {
+		return false, errors.New("got nil request")
 	}
 
 	farm := &postgres.Farms{}
@@ -210,13 +234,6 @@ func update(db *gorm.DB, farm *postgres.Farms) error {
 // delete is func to soft delete data farm into database with update the status to inactive
 func delete(db *gorm.DB, farm *postgres.Farms) error {
 	return db.Model(farm).Where("name = ? AND id = ? and status = ?", farm.Name, farm.Model.ID, model.Active.Value()).Update("status", model.Inactive.Value()).Error
-}
-
-// checkFarmExists is func to check if the data is exist by id and name
-func checkFarmExists(db *gorm.DB, farm *postgres.Farms) bool {
-	var count = int64(0)
-	db.Model(farm).Where("id = ? AND  name = ? AND status = 1", farm.Model.ID, farm.Name).Count(&count).Limit(1)
-	return count > 0
 }
 
 // GetFarmWithPaging is func to get all farm with paging
