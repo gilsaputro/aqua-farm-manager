@@ -18,13 +18,13 @@ import (
 
 // GetByIDPondResponse is list response parameter for GetByID Api
 type GetByIDPondResponse struct {
-	ID           uint     `json:"id"`
-	Name         string   `json:"name"`
-	Capacity     float64  `json:"capacity"`
-	Depth        float64  `json:"depth"`
-	WaterQuality float64  `json:"water_quality"`
-	Species      string   `json:"species"`
-	FarmInfo     FarmInfo `json:"farm"`
+	ID           uint      `json:"id"`
+	Name         string    `json:"name"`
+	Capacity     float64   `json:"capacity"`
+	Depth        float64   `json:"depth"`
+	WaterQuality float64   `json:"water_quality"`
+	Species      string    `json:"species"`
+	FarmInfo     *FarmInfo `json:"farm,omitempty"`
 }
 
 // FarmInfo is list parameter for farm info
@@ -80,6 +80,8 @@ func (h *PondHandler) GetByIDPondHandler(w http.ResponseWriter, r *http.Request)
 
 	select {
 	case <-ctx.Done():
+		code = http.StatusGatewayTimeout
+		err = fmt.Errorf("Timeout")
 		return
 	case err = <-errChan:
 		if err != nil {
@@ -106,13 +108,15 @@ func mapResonseGetByID(r pond.GetPondInfoResponse) utilhttp.StandardResponse {
 		Depth:        r.Depth,
 		WaterQuality: r.WaterQuality,
 		Species:      r.Species,
-		FarmInfo: FarmInfo{
+	}
+	if r.FarmInfo.ID != 0 {
+		data.FarmInfo = &FarmInfo{
 			ID:       r.FarmInfo.ID,
 			Name:     r.FarmInfo.Name,
 			Location: r.FarmInfo.Location,
 			Owner:    r.FarmInfo.Owner,
 			Area:     r.FarmInfo.Area,
-		},
+		}
 	}
 
 	res.Data = data

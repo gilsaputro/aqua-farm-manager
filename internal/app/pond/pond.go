@@ -18,7 +18,8 @@ const (
 // NewPondHandler is func to create http Pond handler
 func NewPondHandler(domain pond.PondDomain, options ...Option) *PondHandler {
 	handler := &PondHandler{
-		domain: domain,
+		domain:       domain,
+		timeoutInSec: defaultTimeout,
 	}
 
 	// Apply options

@@ -66,6 +66,8 @@ func (h *FarmHandler) DeleteByIDFarmHandler(w http.ResponseWriter, r *http.Reque
 
 	select {
 	case <-ctx.Done():
+		code = http.StatusGatewayTimeout
+		err = fmt.Errorf("Timeout")
 		return
 	case err = <-errChan:
 		if err != nil {

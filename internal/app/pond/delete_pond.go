@@ -73,7 +73,7 @@ func (h *PondHandler) DeletePondHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if len(body.PondName) > 1 && body.PondID > 0 {
+	if len(body.PondName) >= 1 && body.PondID > 0 {
 		code = http.StatusBadRequest
 		err = fmt.Errorf("Please Choose to delete by ID or Name")
 		return
@@ -91,6 +91,8 @@ func (h *PondHandler) DeletePondHandler(w http.ResponseWriter, r *http.Request) 
 
 	select {
 	case <-ctx.Done():
+		code = http.StatusGatewayTimeout
+		err = fmt.Errorf("Timeout")
 		return
 	case err = <-errChan:
 		if err != nil {
