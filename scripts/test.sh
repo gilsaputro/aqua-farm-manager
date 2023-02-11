@@ -10,8 +10,6 @@ go test -cover $list_files | tee test.out
 # Extract the coverage statistics and sum them
 success_count=0
 coverage_sum=0
-echo ""
-echo "=== TEST RESULTS ==="
 while read -r line; do
   if [[ $line =~ ok ]]; then
     success_count=$((success_count + 1))

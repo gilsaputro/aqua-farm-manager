@@ -18,12 +18,12 @@ import (
 
 // FFarmResponse is list response parameter for GetByID Api
 type GetByIDFarmResponse struct {
-	ID       uint       `json:"id"`
-	Name     string     `json:"name"`
-	Location string     `json:"location"`
-	Owner    string     `json:"owner"`
-	Area     string     `json:"area"`
-	PondInfo []PondInfo `json:"pond_info"`
+	ID       uint        `json:"id"`
+	Name     string      `json:"name"`
+	Location string      `json:"location"`
+	Owner    string      `json:"owner"`
+	Area     string      `json:"area"`
+	PondInfo *[]PondInfo `json:"pond_info,omitempty"`
 }
 
 type PondInfo struct {
@@ -119,7 +119,10 @@ func mapResonseGetByID(r farm.GetFarmInfoResponse) utilhttp.StandardResponse {
 		Location: r.Location,
 		Owner:    r.Owner,
 		Area:     r.Area,
-		PondInfo: list,
+	}
+
+	if len(list) > 0 {
+		data.PondInfo = &list
 	}
 
 	res.Data = data

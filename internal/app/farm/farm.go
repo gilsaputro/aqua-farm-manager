@@ -18,7 +18,8 @@ const (
 // NewFarmHandler is func to create http farm handler
 func NewFarmHandler(domain farm.FarmDomain, options ...Option) *FarmHandler {
 	handler := &FarmHandler{
-		domain: domain,
+		domain:       domain,
+		timeoutInSec: defaultTimeout,
 	}
 
 	// Apply options

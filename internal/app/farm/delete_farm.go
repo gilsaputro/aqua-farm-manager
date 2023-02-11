@@ -73,7 +73,7 @@ func (h *FarmHandler) DeleteFarmHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if len(body.FarmName) > 1 && body.FarmID > 0 {
+	if len(body.FarmName) >= 1 && body.FarmID > 0 {
 		code = http.StatusBadRequest
 		err = fmt.Errorf("Please Choose to delete by ID or Name")
 		return
