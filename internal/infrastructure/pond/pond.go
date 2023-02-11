@@ -40,6 +40,10 @@ func (p *Pond) Create(r *PondInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
+	if r == nil {
+		return errors.New("got nil request")
+	}
+
 	pond := &postgres.Ponds{
 		Name:         r.Name,
 		Capacity:     r.Capacity,
@@ -105,6 +109,10 @@ func (p *Pond) GetPondByID(r *PondInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
+	if r == nil || r.ID <= 0 {
+		return errors.New("got nil request")
+	}
+
 	pond := &postgres.Ponds{
 		Model: gorm.Model{
 			ID: r.ID,
@@ -145,6 +153,10 @@ func (p *Pond) GetPondByName(r *PondInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
+	if r == nil || len(r.Name) <= 0 {
+		return errors.New("got nil request")
+	}
+
 	pond := &postgres.Ponds{
 		Name: r.Name,
 	}
@@ -180,6 +192,10 @@ func (f *Pond) Update(r *PondInfraInfo) error {
 	db := f.pg.GetDB()
 	if db == nil {
 		return errors.New("Database Client is not init")
+	}
+
+	if r == nil {
+		return errors.New("got nil request")
 	}
 
 	pond := &postgres.Ponds{
@@ -230,6 +246,10 @@ func (f *Pond) Delete(r *PondInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
+	if r == nil {
+		return errors.New("got nil request")
+	}
+
 	pond := &postgres.Ponds{
 		Model: gorm.Model{
 			ID: r.ID,
@@ -256,6 +276,10 @@ func (p *Pond) Verify(r *PondInfraInfo) (bool, error) {
 	db := p.pg.GetDB()
 	if db == nil {
 		return false, errors.New("Database Client is not init")
+	}
+
+	if r == nil {
+		return false, errors.New("got nil request")
 	}
 
 	pond := &postgres.Ponds{}

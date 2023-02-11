@@ -128,7 +128,7 @@ func (f *Farm) GetFarmByName(r *FarmInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
-	if r == nil {
+	if r == nil || len(r.Name) <= 0 {
 		return errors.New("got nil request")
 	}
 
@@ -155,7 +155,7 @@ func (f *Farm) GetFarmByID(r *FarmInfraInfo) error {
 		return errors.New("Database Client is not init")
 	}
 
-	if r == nil {
+	if r == nil || r.ID <= 0 {
 		return errors.New("got nil request")
 	}
 
