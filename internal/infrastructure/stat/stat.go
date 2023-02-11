@@ -148,9 +148,10 @@ func (s *Stat) BackupMetrics(r BackupMetricsRequest) error {
 	}
 
 	err = updateStat(db, &stat)
-
+	if err != nil {
+		return err
+	}
 	stat.Status = model.Active.Value()
-
 	err = insert(db, &stat)
 
 	return err
@@ -158,7 +159,7 @@ func (s *Stat) BackupMetrics(r BackupMetricsRequest) error {
 
 // MigrateMetrics is func to migrate metrics from postgres to redis
 func (s *Stat) MigrateMetrics(r MigrateMetricsRequest) error {
-	var errUA, errReq error
+	var errUA, errReq, errSuc, errEr error
 	key := generatePathKeyMetrics(r.UrlID, r.Method)
 	var wg sync.WaitGroup
 
@@ -174,32 +175,33 @@ func (s *Stat) MigrateMetrics(r MigrateMetricsRequest) error {
 	go func() {
 		defer wg.Done()
 		errReq = s.redis.HSET(key, CountRequested, r.Metrics.NumRequest)
-		if errUA != nil {
+		if errReq != nil {
 			log.Println("MigrateMetrics-Error Ingest Requested :", errReq)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		errReq = s.redis.HSET(key, CountError, r.Metrics.NumError)
-		if errUA != nil {
+		errEr = s.redis.HSET(key, CountError, r.Metrics.NumError)
+		if errEr != nil {
 			log.Println("MigrateMetrics-Error Ingest Requested :", errReq)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		errReq = s.redis.HSET(key, CountSuccess, r.Metrics.NumSuccess)
-		if errUA != nil {
+		errSuc = s.redis.HSET(key, CountSuccess, r.Metrics.NumSuccess)
+		if errSuc != nil {
 			log.Println("MigrateMetrics-Error Ingest Requested :", errReq)
 		}
 	}()
 
-	if errUA != nil || errReq != nil {
+	wg.Wait()
+
+	if errUA != nil || errReq != nil || errEr != nil || errSuc != nil {
 		return fmt.Errorf("got error while migrate")
 	}
 
-	wg.Wait()
 	return nil
 }
 
